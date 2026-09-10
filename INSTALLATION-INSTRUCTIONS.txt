@@ -1,0 +1,80 @@
+======================================
+SpiceIn - Installation Instructions
+======================================
+
+INSTALLATION STEPS:
+-------------------
+
+1. Extract the ZIP file to any folder
+
+2. You will see 3 files:
+   - SpiceIn-Setup.exe (218 KB)
+   - SpiceIn-1.0.0-full.nupkg (1.2 GB)
+   - RELEASES (79 bytes)
+
+3. Run "SpiceIn-Setup.exe"
+   - A loading animation will appear
+   - The app will install and launch automatically
+
+4. After installation, the app is located at:
+   C:\Users\[YourUsername]\AppData\Local\spicein\SpiceIn.exe
+
+   Or use this path directly:
+   %LOCALAPPDATA%\spicein\SpiceIn.exe
+
+
+CREATING DESKTOP SHORTCUT:
+--------------------------
+
+Method 1 (Easiest):
+1. Press Win + R
+2. Type: %LOCALAPPDATA%\spicein
+3. Press Enter
+4. Right-click on "SpiceIn.exe"
+5. Select "Send to" → "Desktop (create shortcut)"
+
+Method 2 (Manual):
+1. Right-click on Desktop → New → Shortcut
+2. For location, type: %LOCALAPPDATA%\spicein\SpiceIn.exe
+3. Click Next
+4. Name it "SpiceIn"
+5. Click Finish
+
+
+DATA STORAGE LOCATION:
+---------------------
+Your inventory data is stored safely at:
+C:\Users\[YourUsername]\AppData\Roaming\spicein\spice-stock.db
+
+Backups are stored at:
+C:\Users\[YourUsername]\AppData\Roaming\spicein\backups\
+
+
+UNINSTALLATION:
+--------------
+To uninstall:
+1. Go to: %LOCALAPPDATA%\spicein
+2. Run "Update.exe --uninstall"
+
+Or use Windows Settings:
+1. Settings → Apps → Installed apps
+2. Find "SpiceIn"
+3. Click Uninstall
+
+
+TROUBLESHOOTING:
+---------------
+If the app doesn't appear after installation:
+1. Check: %LOCALAPPDATA%\spicein\
+2. The SpiceIn.exe should be there
+3. Create desktop shortcut manually (see above)
+
+If installation fails:
+1. Make sure all 3 files are in the same folder
+2. Run as Administrator
+3. Disable antivirus temporarily
+
+
+SUPPORT:
+--------
+For any issues, contact: Jatin Khatri

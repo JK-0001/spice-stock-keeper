@@ -1,0 +1,24 @@
+# Dependencies
+node_modules/
+
+# Build & packaging output
+out/
+dist/
+dist-electron/
+
+# TypeScript incremental build cache
+*.tsbuildinfo
+
+# Packaged distributables
+*.zip
+
+# Debug / scratch files from local runs
+app-*.log
+smoke.log
+
+# Throwaway PDF previews
+Sample-*.pdf
+
+# OS junk
+.DS_Store
+Thumbs.db

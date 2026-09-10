@@ -1,0 +1,38 @@
+{
+  "appId": "com.spicestock.keeper",
+  "productName": "Spice Stock Keeper",
+  "directories": {
+    "output": "release/${version}"
+  },
+  "files": [
+    "dist",
+    "dist-electron",
+    "node_modules/better-sqlite3/**/*"
+  ],
+  "asarUnpack": [
+    "node_modules/better-sqlite3/**/*"
+  ],
+  "win": {
+    "target": [
+      {
+        "target": "nsis",
+        "arch": ["x64"]
+      }
+    ],
+    "icon": "public/icon.png",
+    "artifactName": "${productName}-${version}-Windows-Setup.${ext}"
+  },
+  "nsis": {
+    "oneClick": false,
+    "allowToChangeInstallationDirectory": true,
+    "createDesktopShortcut": true,
+    "createStartMenuShortcut": true,
+    "shortcutName": "Spice Stock Keeper"
+  },
+  "linux": {
+    "target": ["AppImage", "deb"],
+    "category": "Office",
+    "icon": "public/icon.png",
+    "artifactName": "${productName}-${version}-Linux.${ext}"
+  }
+}
