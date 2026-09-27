@@ -25,18 +25,26 @@ export function exportBuiltyToPDF(builty: BuiltyWithItems) {
     head: [['#', 'Item Name', 'Quantity (Katta)']],
     body,
     theme: 'striped',
+    styles: {
+      fontSize: 9,
+      cellPadding: 3,
+      halign: 'center',
+    },
     headStyles: {
       fillColor: [255, 179, 45],
       textColor: [0, 0, 0],
       fontStyle: 'normal',
       fontSize: 10,
       cellPadding: 3,
+      halign: 'center',
     },
-    styles: { fontSize: 9, cellPadding: 3 },
+    bodyStyles: {
+      halign: 'center',
+    },
     columnStyles: {
-      0: { cellWidth: 15, halign: 'center' },
+      0: { cellWidth: 15 },
       1: { cellWidth: 145, halign: 'left' },
-      2: { cellWidth: 40, halign: 'center' },
+      2: { cellWidth: 40 },
     },
     foot: [['', 'Total', String(total)]],
     footStyles: {
@@ -46,6 +54,15 @@ export function exportBuiltyToPDF(builty: BuiltyWithItems) {
       fontSize: 10,
       cellPadding: 3,
       halign: 'center',
+    },
+    didParseCell: (data) => {
+      // Foot row: everything centered (Total label + number).
+      // Head + body: column 1 (Item Name) left, everything else centered.
+      if (data.section === 'foot') {
+        data.cell.styles.halign = 'center';
+        return;
+      }
+      data.cell.styles.halign = data.column.index === 1 ? 'left' : 'center';
     },
   });
 

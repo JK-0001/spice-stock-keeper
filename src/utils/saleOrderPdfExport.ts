@@ -34,24 +34,38 @@ export function exportSaleOrderToPDF(order: SaleOrderWithItems) {
     head: [['#', 'Item Name', 'Marka', 'Quantity', 'Rate', '(-)%']],
     body: tableData,
     theme: 'striped',
+    styles: {
+      fontSize: 9,
+      cellPadding: 3,
+      halign: 'center',
+    },
     headStyles: {
       fillColor: [255, 179, 45],
       textColor: [0, 0, 0],
       fontStyle: 'normal',
       fontSize: 10,
       cellPadding: 3,
+      halign: 'center',
     },
-    styles: {
-      fontSize: 9,
-      cellPadding: 3,
+    bodyStyles: {
+      halign: 'center',
     },
     columnStyles: {
-      0: { cellWidth: 10, halign: 'center' },
+      0: { cellWidth: 10 },
       1: { cellWidth: 50, halign: 'left' },
-      2: { cellWidth: 40, halign: 'center' },
-      3: { cellWidth: 30, halign: 'center' },
-      4: { cellWidth: 30, halign: 'center' },
-      5: { cellWidth: 40, halign: 'center' },
+      2: { cellWidth: 40 },
+      3: { cellWidth: 30 },
+      4: { cellWidth: 30 },
+      5: { cellWidth: 40 },
+    },
+    didParseCell: (data) => {
+      // Force alignment defensively: column 1 = left everywhere, everything else = center.
+      // Guards against any theme/style override that might slip past columnStyles.
+      if (data.column.index === 1) {
+        data.cell.styles.halign = 'left';
+      } else {
+        data.cell.styles.halign = 'center';
+      }
     },
   });
 
