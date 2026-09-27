@@ -2,6 +2,18 @@ import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { updateElectronApp } from 'update-electron-app';
+
+// Handle Squirrel install/update/uninstall lifecycle events. When the Squirrel
+// installer runs the app with --squirrel-install / --squirrel-updated /
+// --squirrel-uninstall / --squirrel-obsolete, this call creates or removes
+// the Start Menu and Desktop shortcuts and then quits the app so Squirrel
+// can finish. Without this, no shortcuts get created on install.
+// MUST run before any other app logic.
+// eslint-disable-next-line @typescript-eslint/no-var-requires
+if (require('electron-squirrel-startup')) {
+  app.quit();
+}
+
 import { initDatabase } from './database/migrations';
 import { closeDatabase } from './database/db';
 import * as handlers from './database/handlers';
