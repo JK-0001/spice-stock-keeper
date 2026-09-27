@@ -11,6 +11,7 @@ import ColdStorages from "./pages/ColdStorages";
 import Reports from "./pages/Reports";
 import SaleOrders from "./pages/SaleOrders";
 import Builty from "./pages/Builty";
+import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -29,6 +30,7 @@ const App = () => (
           <Route path="/sale-orders" element={<AppLayout><SaleOrders /></AppLayout>} />
           <Route path="/builty" element={<AppLayout><Builty /></AppLayout>} />
           <Route path="/reports" element={<AppLayout><Reports /></AppLayout>} />
+          <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
           <Route path="*" element={<AppLayout><NotFound /></AppLayout>} />
         </Routes>
       </HashRouter>

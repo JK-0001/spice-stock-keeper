@@ -118,6 +118,7 @@ export interface BuiltyItem {
   id: string;
   builty_id: string;
   item_name: string;
+  marka: string | null;
   quantity: number;
   sort_order: number;
   created_at: string;

@@ -64,6 +64,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   createManualBackup: (): Promise<{ success: boolean; message: string }> =>
     ipcRenderer.invoke('backup:createManual'),
 
+  importDatabase: (): Promise<{ success: boolean; message: string; cancelled?: boolean; needsRestart?: boolean }> =>
+    ipcRenderer.invoke('backup:importDatabase'),
+
   // Print API
   printPDF: (dataUrl: string): Promise<{ success: boolean; message: string }> =>
     ipcRenderer.invoke('print:pdf', dataUrl),
@@ -112,6 +115,7 @@ declare global {
       getDashboardStats: () => Promise<DashboardStats>;
       createBackup: () => Promise<{ success: boolean; message: string; filePath?: string }>;
       createManualBackup: () => Promise<{ success: boolean; message: string }>;
+      importDatabase: () => Promise<{ success: boolean; message: string; cancelled?: boolean; needsRestart?: boolean }>;
       printPDF: (dataUrl: string) => Promise<{ success: boolean; message: string }>;
       getSaleOrders: () => Promise<SaleOrderWithItems[]>;
       getSaleOrder: (id: string) => Promise<SaleOrderWithItems | null>;

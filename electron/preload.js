@@ -21,6 +21,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Backup API
     createBackup: () => ipcRenderer.invoke('backup:create'),
     createManualBackup: () => ipcRenderer.invoke('backup:createManual'),
+    importDatabase: () => ipcRenderer.invoke('backup:importDatabase'),
     // Print API
     printPDF: (dataUrl) => ipcRenderer.invoke('print:pdf', dataUrl),
     // Sale Order API

@@ -18,3 +18,9 @@ export declare function createBackupOnClose(): {
     success: boolean;
     message: string;
 };
+export declare function importDatabase(): Promise<{
+    success: boolean;
+    message: string;
+    cancelled?: boolean;
+    needsRestart?: boolean;
+}>;

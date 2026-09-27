@@ -135,6 +135,7 @@ export default function Builty() {
                                 <thead className="bg-muted/50">
                                   <tr>
                                     <th className="text-left px-3 py-2">Item</th>
+                                    <th className="text-left px-3 py-2">Marka</th>
                                     <th className="text-right px-3 py-2">Quantity (Katta)</th>
                                   </tr>
                                 </thead>
@@ -142,13 +143,14 @@ export default function Builty() {
                                   {b.items.map((it) => (
                                     <tr key={it.id} className="border-t border-border">
                                       <td className="px-3 py-2">{it.item_name}</td>
+                                      <td className="px-3 py-2 text-muted-foreground">{it.marka || '—'}</td>
                                       <td className="px-3 py-2 text-right tabular-nums">{it.quantity}</td>
                                     </tr>
                                   ))}
                                 </tbody>
                                 <tfoot className="border-t-2 border-border bg-muted/30">
                                   <tr>
-                                    <td className="px-3 py-2 text-right font-medium">Total</td>
+                                    <td className="px-3 py-2 text-right font-medium" colSpan={2}>Total</td>
                                     <td className="px-3 py-2 text-right font-bold tabular-nums">{total}</td>
                                   </tr>
                                 </tfoot>

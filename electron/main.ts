@@ -23,7 +23,8 @@ import {
   checkAndCreateBackupOnStartup,
   startPeriodicBackup,
   stopPeriodicBackup,
-  createBackupOnClose
+  createBackupOnClose,
+  importDatabase,
 } from './database/backup';
 
 // Auto-update from GitHub Releases via update.electronjs.org (free service).
@@ -200,6 +201,10 @@ app.on('ready', () => {
 
   ipcMain.handle('backup:createManual', async () => {
     return await createManualBackup();
+  });
+
+  ipcMain.handle('backup:importDatabase', async () => {
+    return await importDatabase();
   });
 
   // Print PDF handler - opens PDF in a preview window with built-in Print/Save buttons

@@ -23,6 +23,12 @@ declare global {
                 success: boolean;
                 message: string;
             }>;
+            importDatabase: () => Promise<{
+                success: boolean;
+                message: string;
+                cancelled?: boolean;
+                needsRestart?: boolean;
+            }>;
             printPDF: (dataUrl: string) => Promise<{
                 success: boolean;
                 message: string;

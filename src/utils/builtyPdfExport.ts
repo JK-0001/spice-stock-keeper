@@ -16,13 +16,18 @@ export function exportBuiltyToPDF(builty: BuiltyWithItems) {
 
   const total = builty.items.reduce((s, it) => s + Number(it.quantity || 0), 0);
 
-  const body = builty.items.map((it, i) => [String(i + 1), it.item_name, String(it.quantity)]);
+  const body = builty.items.map((it, i) => [
+    String(i + 1),
+    it.item_name,
+    it.marka || '—',
+    String(it.quantity),
+  ]);
 
   autoTable(doc, {
     startY: 50,
     margin: { left: 5, right: 5 },
     tableWidth: 'auto',
-    head: [['#', 'Item Name', 'Quantity (Katta)']],
+    head: [['#', 'Item Name', 'Marka', 'Quantity (Katta)']],
     body,
     theme: 'striped',
     styles: {
@@ -42,11 +47,12 @@ export function exportBuiltyToPDF(builty: BuiltyWithItems) {
       halign: 'center',
     },
     columnStyles: {
-      0: { cellWidth: 15 },
-      1: { cellWidth: 145, halign: 'left' },
-      2: { cellWidth: 40 },
+      0: { cellWidth: 12 },
+      1: { cellWidth: 90, halign: 'left' },
+      2: { cellWidth: 55 },
+      3: { cellWidth: 40 },
     },
-    foot: [['', 'Total', String(total)]],
+    foot: [['', 'Total', '', String(total)]],
     footStyles: {
       fillColor: [255, 179, 45],
       textColor: [0, 0, 0],

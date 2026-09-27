@@ -1,6 +1,8 @@
 import fs from 'fs';
 import path from 'path';
 import { app, dialog } from 'electron';
+import Database from 'better-sqlite3';
+import { closeDatabase } from './db';
 
 const BACKUP_DIR = path.join(app.getPath('userData'), 'backups');
 const DB_PATH = path.join(app.getPath('userData'), 'spice-stock.db');
@@ -192,4 +194,112 @@ export function createBackupOnClose(): { success: boolean; message: string } {
   const result = createBackup();
   console.log('Close backup result:', result.message);
   return result;
+}
+
+// Import database from a user-chosen file. Validates the file, backs up the
+// current DB (so the operation is reversible), overwrites the DB file, then
+// relaunches the app so the fresh DB loads cleanly.
+export async function importDatabase(): Promise<{
+  success: boolean;
+  message: string;
+  cancelled?: boolean;
+  needsRestart?: boolean;
+}> {
+  try {
+    // 1) Ask the user to pick a .db file
+    const picked = await dialog.showOpenDialog({
+      title: 'Import SpiceIn Data',
+      properties: ['openFile'],
+      filters: [
+        { name: 'SpiceIn Database', extensions: ['db'] },
+        { name: 'All Files', extensions: ['*'] },
+      ],
+    });
+
+    if (picked.canceled || picked.filePaths.length === 0) {
+      return { success: false, cancelled: true, message: 'Import cancelled' };
+    }
+
+    const srcPath = picked.filePaths[0];
+
+    // 2) Validate that the picked file is a real SpiceIn database
+    let testDb: Database.Database | null = null;
+    try {
+      testDb = new Database(srcPath, { readonly: true, fileMustExist: true });
+      const tables = testDb
+        .prepare("SELECT name FROM sqlite_master WHERE type='table'")
+        .all() as Array<{ name: string }>;
+      const names = tables.map((t) => t.name);
+      const required = ['inventory', 'sale_orders', 'builty', 'cold_storages'];
+      const missing = required.filter((t) => !names.includes(t));
+      if (missing.length > 0) {
+        return {
+          success: false,
+          message: `Selected file is not a SpiceIn database. Missing tables: ${missing.join(', ')}`,
+        };
+      }
+    } catch (err) {
+      return {
+        success: false,
+        message: `Could not open the selected file as a database: ${
+          err instanceof Error ? err.message : String(err)
+        }`,
+      };
+    } finally {
+      if (testDb) testDb.close();
+    }
+
+    // 3) Ask the user to confirm — this replaces all current data
+    const confirm = await dialog.showMessageBox({
+      type: 'warning',
+      title: 'Replace all data on this laptop?',
+      message:
+        'This will replace ALL current SpiceIn data on this laptop with data from the imported file.',
+      detail:
+        `Source file:\n${srcPath}\n\n` +
+        'A backup of your current data will be saved first so you can restore it later if needed.\n\n' +
+        'The app will restart automatically after import.',
+      buttons: ['Cancel', 'Yes, replace and restart'],
+      defaultId: 0,
+      cancelId: 0,
+    });
+
+    if (confirm.response !== 1) {
+      return { success: false, cancelled: true, message: 'Import cancelled' };
+    }
+
+    // 4) Back up the current DB before overwriting (so import is reversible)
+    if (fs.existsSync(DB_PATH)) {
+      const preBackup = createBackup();
+      if (!preBackup.success) {
+        return {
+          success: false,
+          message: `Aborted: could not back up current data first. ${preBackup.message}`,
+        };
+      }
+    }
+
+    // 5) Close the current DB connection so the file is not locked on Windows
+    closeDatabase();
+
+    // 6) Copy the imported file over the current DB file
+    fs.copyFileSync(srcPath, DB_PATH);
+    console.log('Imported database from:', srcPath);
+
+    // 7) Relaunch so the new DB is opened fresh, then quit this instance
+    app.relaunch();
+    app.exit(0);
+
+    return {
+      success: true,
+      needsRestart: true,
+      message: 'Data imported. App is restarting…',
+    };
+  } catch (error) {
+    console.error('Import failed:', error);
+    return {
+      success: false,
+      message: `Import failed: ${error instanceof Error ? error.message : 'Unknown error'}`,
+    };
+  }
 }

@@ -15,7 +15,7 @@ if (require('electron-squirrel-startup')) {
 import { initDatabase } from './database/migrations';
 import { closeDatabase } from './database/db';
 import * as handlers from './database/handlers';
-import { createBackup, createManualBackup, checkAndCreateBackupOnStartup, startPeriodicBackup, stopPeriodicBackup, createBackupOnClose } from './database/backup';
+import { createBackup, createManualBackup, checkAndCreateBackupOnStartup, startPeriodicBackup, stopPeriodicBackup, createBackupOnClose, importDatabase, } from './database/backup';
 // Auto-update from GitHub Releases via update.electronjs.org (free service).
 // Only runs in packaged builds; a no-op in `npm run start` dev mode.
 // Requires the app to be installed via the Squirrel Setup.exe (not portable zip).
@@ -159,6 +159,9 @@ app.on('ready', () => {
     });
     ipcMain.handle('backup:createManual', async () => {
         return await createManualBackup();
+    });
+    ipcMain.handle('backup:importDatabase', async () => {
+        return await importDatabase();
     });
     // Print PDF handler - opens PDF in a preview window with built-in Print/Save buttons
     ipcMain.handle('print:pdf', (_, dataUrl) => {

@@ -492,12 +492,26 @@ export function initDatabase(): void {
       id TEXT PRIMARY KEY,
       builty_id TEXT NOT NULL,
       item_name TEXT NOT NULL,
+      marka TEXT,
       quantity REAL NOT NULL,
       sort_order INTEGER NOT NULL DEFAULT 0,
       created_at TEXT NOT NULL,
       FOREIGN KEY (builty_id) REFERENCES builty(id) ON DELETE CASCADE
     );
   `);
+
+  // Migration: add marka column to existing builty_items tables (v1.0.2 or earlier)
+  try {
+    const tableInfo = db.prepare('PRAGMA table_info(builty_items)').all() as Array<{ name: string }>;
+    const hasMarka = tableInfo.some((c) => c.name === 'marka');
+    if (!hasMarka) {
+      console.log('Adding marka column to builty_items table...');
+      db.exec(`ALTER TABLE builty_items ADD COLUMN marka TEXT;`);
+      console.log('marka column added');
+    }
+  } catch (error) {
+    console.error('Error adding marka column to builty_items:', error);
+  }
 
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_builty_date ON builty(builty_date);

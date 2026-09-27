@@ -42,10 +42,14 @@ module.exports = {
       const nodeExe = process.execPath;
       const viteBin = path.join(__dirname, 'node_modules', 'vite', 'bin', 'vite.js');
       const tscBin = path.join(__dirname, 'node_modules', 'typescript', 'bin', 'tsc');
-      console.log('Running Vite build (includes TypeScript)...');
-      execFileSync(nodeExe, [viteBin, 'build'], { stdio: 'inherit', cwd: __dirname });
-      console.log('Building Electron main process...');
+      // tsc runs FIRST so the compiled .js next to each .ts in electron/ is
+      // up-to-date before vite-plugin-electron resolves any main-process
+      // imports (Node's module resolution favours .js over .ts when both
+      // exist, so a stale .js would otherwise mask the fresh .ts).
+      console.log('Building Electron main process (tsc)...');
       execFileSync(nodeExe, [tscBin, '--project', 'tsconfig.node.json'], { stdio: 'inherit', cwd: __dirname });
+      console.log('Running Vite build (renderer + main bundle)...');
+      execFileSync(nodeExe, [viteBin, 'build'], { stdio: 'inherit', cwd: __dirname });
     }
   },
   makers: [

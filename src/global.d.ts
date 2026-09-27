@@ -36,6 +36,7 @@ declare global {
       getDashboardStats: () => Promise<DashboardStats>;
       createBackup: () => Promise<{ success: boolean; message: string; filePath?: string }>;
       createManualBackup: () => Promise<{ success: boolean; message: string }>;
+      importDatabase: () => Promise<{ success: boolean; message: string; cancelled?: boolean; needsRestart?: boolean }>;
       getSaleOrders: () => Promise<SaleOrderWithItems[]>;
       getSaleOrder: (id: string) => Promise<SaleOrderWithItems | null>;
       addSaleOrder: (data: NewSaleOrder) => Promise<SaleOrderWithItems>;

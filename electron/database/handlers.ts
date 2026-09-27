@@ -401,15 +401,15 @@ export function getPartySuggestions(): string[] {
   return rows.map((r) => r.party_name);
 }
 
-// Marka (brand) pool = distinct marka values from sale_order_items
-// (marka only exists on sale-order line items today)
+// Marka (brand) pool = union of distinct marka values from sale_order_items + builty_items
 export function getMarkaSuggestions(): string[] {
   const db = getDatabase();
   const rows = db
     .prepare(
-      `SELECT DISTINCT marka FROM sale_order_items
-       WHERE marka IS NOT NULL AND marka != ''
-       ORDER BY marka ASC`
+      `SELECT DISTINCT marka FROM (
+         SELECT marka FROM sale_order_items WHERE marka IS NOT NULL AND marka != ''
+         UNION SELECT marka FROM builty_items WHERE marka IS NOT NULL AND marka != ''
+       ) ORDER BY marka ASC`
     )
     .all() as Array<{ marka: string }>;
   return rows.map((r) => r.marka);
@@ -615,11 +615,11 @@ export function addBuilty(data: NewBuilty): BuiltyWithItems {
     ).run(id, serial, data.builty_date, data.party_name, data.notes ?? null, now, now);
 
     const insItem = db.prepare(
-      `INSERT INTO builty_items (id, builty_id, item_name, quantity, sort_order, created_at)
-       VALUES (?, ?, ?, ?, ?, ?)`
+      `INSERT INTO builty_items (id, builty_id, item_name, marka, quantity, sort_order, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?)`
     );
     data.items.forEach((item, idx) => {
-      insItem.run(uuidv4(), id, item.item_name, item.quantity, item.sort_order ?? idx, now);
+      insItem.run(uuidv4(), id, item.item_name, item.marka ?? null, item.quantity, item.sort_order ?? idx, now);
     });
   });
   tx();
