@@ -91,6 +91,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // Autocomplete suggestions
   getPartySuggestions: (): Promise<string[]> => ipcRenderer.invoke('db:getPartySuggestions'),
   getItemNameSuggestions: (): Promise<string[]> => ipcRenderer.invoke('db:getItemNameSuggestions'),
+  getMarkaSuggestions: (): Promise<string[]> => ipcRenderer.invoke('db:getMarkaSuggestions'),
 });
 
 // Type declaration for TypeScript
@@ -124,6 +125,7 @@ declare global {
       deleteBuilty: (id: string) => Promise<void>;
       getPartySuggestions: () => Promise<string[]>;
       getItemNameSuggestions: () => Promise<string[]>;
+      getMarkaSuggestions: () => Promise<string[]>;
     };
   }
 }

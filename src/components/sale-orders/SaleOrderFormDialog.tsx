@@ -13,7 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
 import { AutocompleteInput } from '@/components/ui/autocomplete-input';
 import { useAddSaleOrder, useUpdateSaleOrder } from '@/hooks/useSaleOrders';
-import { usePartySuggestions, useItemNameSuggestions } from '@/hooks/useSuggestions';
+import { usePartySuggestions, useItemNameSuggestions, useMarkaSuggestions } from '@/hooks/useSuggestions';
 import { useToast } from '@/hooks/use-toast';
 import type { SaleOrderWithItems, NewSaleOrderItem } from '@/lib/types';
 
@@ -48,6 +48,7 @@ export function SaleOrderFormDialog({ order, trigger, open: openProp, onOpenChan
 
   const { data: partySuggestions = [] } = usePartySuggestions();
   const { data: itemSuggestions = [] } = useItemNameSuggestions();
+  const { data: markaSuggestions = [] } = useMarkaSuggestions();
   const addMut = useAddSaleOrder();
   const updateMut = useUpdateSaleOrder();
   const { toast } = useToast();
@@ -213,9 +214,10 @@ export function SaleOrderFormDialog({ order, trigger, open: openProp, onOpenChan
                     />
                   </td>
                   <td className="px-2 py-1">
-                    <Input
+                    <AutocompleteInput
                       value={r.marka}
                       onChange={(e) => updateRow(idx, { marka: e.target.value })}
+                      suggestions={markaSuggestions}
                       placeholder="Brand"
                     />
                   </td>

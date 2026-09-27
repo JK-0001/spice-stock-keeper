@@ -39,6 +39,7 @@ declare global {
             deleteBuilty: (id: string) => Promise<void>;
             getPartySuggestions: () => Promise<string[]>;
             getItemNameSuggestions: () => Promise<string[]>;
+            getMarkaSuggestions: () => Promise<string[]>;
         };
     }
 }

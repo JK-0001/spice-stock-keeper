@@ -38,4 +38,5 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Autocomplete suggestions
     getPartySuggestions: () => ipcRenderer.invoke('db:getPartySuggestions'),
     getItemNameSuggestions: () => ipcRenderer.invoke('db:getItemNameSuggestions'),
+    getMarkaSuggestions: () => ipcRenderer.invoke('db:getMarkaSuggestions'),
 });

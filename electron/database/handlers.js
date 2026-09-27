@@ -301,6 +301,17 @@ export function getPartySuggestions() {
         .all();
     return rows.map((r) => r.party_name);
 }
+// Marka (brand) pool = distinct marka values from sale_order_items
+// (marka only exists on sale-order line items today)
+export function getMarkaSuggestions() {
+    const db = getDatabase();
+    const rows = db
+        .prepare(`SELECT DISTINCT marka FROM sale_order_items
+       WHERE marka IS NOT NULL AND marka != ''
+       ORDER BY marka ASC`)
+        .all();
+    return rows.map((r) => r.marka);
+}
 // Item name pool = union of item names from inventory + sale_order_items + builty_items
 export function getItemNameSuggestions() {
     const db = getDatabase();

@@ -15,3 +15,10 @@ export function useItemNameSuggestions() {
     queryFn: () => db.getItemNameSuggestions(),
   });
 }
+
+export function useMarkaSuggestions() {
+  return useQuery({
+    queryKey: ['suggestions', 'marka'],
+    queryFn: () => db.getMarkaSuggestions(),
+  });
+}

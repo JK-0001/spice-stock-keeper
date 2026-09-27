@@ -11,6 +11,7 @@ export declare function addOutgoing(data: NewOutgoing): Outgoing;
 export declare function updateOutgoing(id: string, data: UpdateOutgoing): Outgoing;
 export declare function deleteOutgoing(id: string): void;
 export declare function getPartySuggestions(): string[];
+export declare function getMarkaSuggestions(): string[];
 export declare function getItemNameSuggestions(): string[];
 export declare function getSaleOrders(): SaleOrderWithItems[];
 export declare function getSaleOrder(id: string): SaleOrderWithItems | null;

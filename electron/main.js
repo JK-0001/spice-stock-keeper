@@ -1,10 +1,22 @@
 import { app, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { updateElectronApp } from 'update-electron-app';
 import { initDatabase } from './database/migrations';
 import { closeDatabase } from './database/db';
 import * as handlers from './database/handlers';
 import { createBackup, createManualBackup, checkAndCreateBackupOnStartup, startPeriodicBackup, stopPeriodicBackup, createBackupOnClose } from './database/backup';
+// Auto-update from GitHub Releases via update.electronjs.org (free service).
+// Only runs in packaged builds; a no-op in `npm run start` dev mode.
+// Requires the app to be installed via the Squirrel Setup.exe (not portable zip).
+if (app.isPackaged) {
+    try {
+        updateElectronApp({ updateInterval: '1 hour' });
+    }
+    catch (err) {
+        console.error('Auto-updater failed to start:', err);
+    }
+}
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 // On some Windows machines the Electron sandbox kills the child (renderer/GPU)
@@ -130,6 +142,7 @@ app.on('ready', () => {
     // Autocomplete suggestion handlers
     ipcMain.handle('db:getPartySuggestions', () => handlers.getPartySuggestions());
     ipcMain.handle('db:getItemNameSuggestions', () => handlers.getItemNameSuggestions());
+    ipcMain.handle('db:getMarkaSuggestions', () => handlers.getMarkaSuggestions());
     // Backup handlers
     ipcMain.handle('backup:create', () => {
         return createBackup();

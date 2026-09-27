@@ -37,11 +37,15 @@ module.exports = {
   rebuildConfig: {},
   hooks: {
     prePackage: async () => {
-      const { execSync } = require('child_process');
+      const { execFileSync } = require('child_process');
+      const path = require('path');
+      const nodeExe = process.execPath;
+      const viteBin = path.join(__dirname, 'node_modules', 'vite', 'bin', 'vite.js');
+      const tscBin = path.join(__dirname, 'node_modules', 'typescript', 'bin', 'tsc');
       console.log('Running Vite build (includes TypeScript)...');
-      execSync('npx vite build', { stdio: 'inherit' });
+      execFileSync(nodeExe, [viteBin, 'build'], { stdio: 'inherit', cwd: __dirname });
       console.log('Building Electron main process...');
-      execSync('npx tsc --project tsconfig.node.json', { stdio: 'inherit' });
+      execFileSync(nodeExe, [tscBin, '--project', 'tsconfig.node.json'], { stdio: 'inherit', cwd: __dirname });
     }
   },
   makers: [

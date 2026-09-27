@@ -45,7 +45,7 @@ export function exportBuiltyToPDF(builty: BuiltyWithItems) {
       fontStyle: 'bold',
       fontSize: 10,
       cellPadding: 3,
-      halign: 'right',
+      halign: 'center',
     },
   });
 
