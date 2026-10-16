@@ -1,12 +1,14 @@
 import { useState } from 'react';
-import { Download, Upload, HardDrive, ShieldCheck } from 'lucide-react';
+import { Download, Upload, HardDrive, ShieldCheck, FileSpreadsheet } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
+import { ImportFromExcelDialog } from '@/components/settings/ImportFromExcelDialog';
 
 export default function Settings() {
   const { toast } = useToast();
   const [exporting, setExporting] = useState(false);
   const [importing, setImporting] = useState(false);
+  const [excelDialogOpen, setExcelDialogOpen] = useState(false);
 
   const handleExport = async () => {
     setExporting(true);
@@ -119,6 +121,35 @@ export default function Settings() {
         </div>
       </section>
 
+      {/* Excel import — seed item + party dropdowns from a spreadsheet */}
+      <section className="bg-card border border-border rounded-lg p-6">
+        <div className="flex flex-col sm:flex-row sm:items-center gap-4">
+          <div className="flex items-start gap-3 flex-1">
+            <div className="w-10 h-10 rounded-md bg-primary/10 text-primary flex items-center justify-center shrink-0">
+              <FileSpreadsheet className="w-5 h-5" />
+            </div>
+            <div>
+              <h2 className="font-semibold text-foreground">Import from Excel</h2>
+              <p className="text-sm text-muted-foreground mt-1">
+                Load a list of item names and party names from an Excel file (
+                <code className="text-xs">.xlsx</code>, <code className="text-xs">.xls</code>, or{' '}
+                <code className="text-xs">.csv</code>). You'll see a preview where you can mark
+                which columns are items vs. parties, edit any cell, and uncheck rows you don't
+                want. Imported names show up in the autocomplete dropdowns across the app.
+                Duplicates are skipped automatically.
+              </p>
+            </div>
+          </div>
+          <Button
+            variant="outline"
+            onClick={() => setExcelDialogOpen(true)}
+            className="shrink-0 min-w-[140px]"
+          >
+            Import from Excel
+          </Button>
+        </div>
+      </section>
+
       <section className="bg-card border border-border rounded-lg p-6">
         <div className="flex items-start gap-3">
           <div className="w-10 h-10 rounded-md bg-muted text-muted-foreground flex items-center justify-center shrink-0">
@@ -140,6 +171,8 @@ export default function Settings() {
           </div>
         </div>
       </section>
+
+      <ImportFromExcelDialog open={excelDialogOpen} onOpenChange={setExcelDialogOpen} />
     </div>
   );
 }

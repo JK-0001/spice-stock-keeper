@@ -13,6 +13,14 @@ export declare function deleteOutgoing(id: string): void;
 export declare function getPartySuggestions(): string[];
 export declare function getMarkaSuggestions(): string[];
 export declare function getItemNameSuggestions(): string[];
+export declare function importItemsMaster(names: string[]): {
+    inserted: number;
+    skipped: number;
+};
+export declare function importPartiesMaster(names: string[]): {
+    inserted: number;
+    skipped: number;
+};
 export declare function getSaleOrders(): SaleOrderWithItems[];
 export declare function getSaleOrder(id: string): SaleOrderWithItems | null;
 export declare function addSaleOrder(data: NewSaleOrder): SaleOrderWithItems;

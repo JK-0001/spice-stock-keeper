@@ -46,6 +46,14 @@ declare global {
             getPartySuggestions: () => Promise<string[]>;
             getItemNameSuggestions: () => Promise<string[]>;
             getMarkaSuggestions: () => Promise<string[]>;
+            importItemsMaster: (names: string[]) => Promise<{
+                inserted: number;
+                skipped: number;
+            }>;
+            importPartiesMaster: (names: string[]) => Promise<{
+                inserted: number;
+                skipped: number;
+            }>;
         };
     }
 }

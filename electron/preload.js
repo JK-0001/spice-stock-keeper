@@ -40,4 +40,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     getPartySuggestions: () => ipcRenderer.invoke('db:getPartySuggestions'),
     getItemNameSuggestions: () => ipcRenderer.invoke('db:getItemNameSuggestions'),
     getMarkaSuggestions: () => ipcRenderer.invoke('db:getMarkaSuggestions'),
+    // Excel master-list import
+    importItemsMaster: (names) => ipcRenderer.invoke('db:importItemsMaster', names),
+    importPartiesMaster: (names) => ipcRenderer.invoke('db:importPartiesMaster', names),
 });

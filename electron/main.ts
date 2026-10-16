@@ -194,6 +194,14 @@ app.on('ready', () => {
   ipcMain.handle('db:getItemNameSuggestions', () => handlers.getItemNameSuggestions());
   ipcMain.handle('db:getMarkaSuggestions', () => handlers.getMarkaSuggestions());
 
+  // Excel master-list import handlers
+  ipcMain.handle('db:importItemsMaster', (_, names: string[]) =>
+    handlers.importItemsMaster(names)
+  );
+  ipcMain.handle('db:importPartiesMaster', (_, names: string[]) =>
+    handlers.importPartiesMaster(names)
+  );
+
   // Backup handlers
   ipcMain.handle('backup:create', () => {
     return createBackup();

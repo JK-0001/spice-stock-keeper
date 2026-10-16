@@ -95,6 +95,12 @@ contextBridge.exposeInMainWorld('electronAPI', {
   getPartySuggestions: (): Promise<string[]> => ipcRenderer.invoke('db:getPartySuggestions'),
   getItemNameSuggestions: (): Promise<string[]> => ipcRenderer.invoke('db:getItemNameSuggestions'),
   getMarkaSuggestions: (): Promise<string[]> => ipcRenderer.invoke('db:getMarkaSuggestions'),
+
+  // Excel master-list import
+  importItemsMaster: (names: string[]): Promise<{ inserted: number; skipped: number }> =>
+    ipcRenderer.invoke('db:importItemsMaster', names),
+  importPartiesMaster: (names: string[]): Promise<{ inserted: number; skipped: number }> =>
+    ipcRenderer.invoke('db:importPartiesMaster', names),
 });
 
 // Type declaration for TypeScript
@@ -130,6 +136,8 @@ declare global {
       getPartySuggestions: () => Promise<string[]>;
       getItemNameSuggestions: () => Promise<string[]>;
       getMarkaSuggestions: () => Promise<string[]>;
+      importItemsMaster: (names: string[]) => Promise<{ inserted: number; skipped: number }>;
+      importPartiesMaster: (names: string[]) => Promise<{ inserted: number; skipped: number }>;
     };
   }
 }

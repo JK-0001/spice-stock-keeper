@@ -386,7 +386,7 @@ export function deleteOutgoing(id: string): void {
 }
 
 // ─── Shared autocomplete suggestions ──────────────────────────────
-// Party name pool = union of parties from inventory + sale_orders + builty
+// Party name pool = union of parties from inventory + sale_orders + builty + parties_master
 export function getPartySuggestions(): string[] {
   const db = getDatabase();
   const rows = db
@@ -395,6 +395,7 @@ export function getPartySuggestions(): string[] {
          SELECT party_name FROM inventory WHERE party_name IS NOT NULL AND party_name != ''
          UNION SELECT party_name FROM sale_orders WHERE party_name IS NOT NULL AND party_name != ''
          UNION SELECT party_name FROM builty WHERE party_name IS NOT NULL AND party_name != ''
+         UNION SELECT name AS party_name FROM parties_master WHERE name IS NOT NULL AND name != ''
        ) ORDER BY party_name ASC`
     )
     .all() as Array<{ party_name: string }>;
@@ -415,7 +416,7 @@ export function getMarkaSuggestions(): string[] {
   return rows.map((r) => r.marka);
 }
 
-// Item name pool = union of item names from inventory + sale_order_items + builty_items
+// Item name pool = union of item names from inventory + sale_order_items + builty_items + items_master
 export function getItemNameSuggestions(): string[] {
   const db = getDatabase();
   const rows = db
@@ -424,10 +425,63 @@ export function getItemNameSuggestions(): string[] {
          SELECT item_name FROM inventory WHERE item_name IS NOT NULL AND item_name != ''
          UNION SELECT item_name FROM sale_order_items WHERE item_name IS NOT NULL AND item_name != ''
          UNION SELECT item_name FROM builty_items WHERE item_name IS NOT NULL AND item_name != ''
+         UNION SELECT name AS item_name FROM items_master WHERE name IS NOT NULL AND name != ''
        ) ORDER BY item_name ASC`
     )
     .all() as Array<{ item_name: string }>;
   return rows.map((r) => r.item_name);
+}
+
+// ─── Master-list bulk import (from Excel) ─────────────────────────
+// Each returns { inserted, skipped } where skipped are names already present
+// (case-insensitive) or empty strings. Uses INSERT OR IGNORE against the
+// UNIQUE COLLATE NOCASE constraint, so re-importing the same list is safe.
+export function importItemsMaster(names: string[]): { inserted: number; skipped: number } {
+  const db = getDatabase();
+  const stmt = db.prepare(
+    `INSERT OR IGNORE INTO items_master (id, name, created_at) VALUES (?, ?, ?)`
+  );
+  let inserted = 0;
+  let skipped = 0;
+  const now = new Date().toISOString();
+  const tx = db.transaction((rows: string[]) => {
+    for (const raw of rows) {
+      const name = (raw ?? '').toString().trim();
+      if (!name) {
+        skipped++;
+        continue;
+      }
+      const res = stmt.run(uuidv4(), name, now);
+      if (res.changes > 0) inserted++;
+      else skipped++;
+    }
+  });
+  tx(names);
+  return { inserted, skipped };
+}
+
+export function importPartiesMaster(names: string[]): { inserted: number; skipped: number } {
+  const db = getDatabase();
+  const stmt = db.prepare(
+    `INSERT OR IGNORE INTO parties_master (id, name, created_at) VALUES (?, ?, ?)`
+  );
+  let inserted = 0;
+  let skipped = 0;
+  const now = new Date().toISOString();
+  const tx = db.transaction((rows: string[]) => {
+    for (const raw of rows) {
+      const name = (raw ?? '').toString().trim();
+      if (!name) {
+        skipped++;
+        continue;
+      }
+      const res = stmt.run(uuidv4(), name, now);
+      if (res.changes > 0) inserted++;
+      else skipped++;
+    }
+  });
+  tx(names);
+  return { inserted, skipped };
 }
 
 // ─── FY serial helper ─────────────────────────────────────────────
@@ -656,11 +710,11 @@ export function updateBuilty(id: string, data: UpdateBuilty): BuiltyWithItems {
     if (data.items !== undefined) {
       db.prepare(`DELETE FROM builty_items WHERE builty_id = ?`).run(id);
       const insItem = db.prepare(
-        `INSERT INTO builty_items (id, builty_id, item_name, quantity, sort_order, created_at)
-         VALUES (?, ?, ?, ?, ?, ?)`
+        `INSERT INTO builty_items (id, builty_id, item_name, marka, quantity, sort_order, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?)`
       );
       data.items.forEach((item, idx) => {
-        insItem.run(uuidv4(), id, item.item_name, item.quantity, item.sort_order ?? idx, now);
+        insItem.run(uuidv4(), id, item.item_name, item.marka ?? null, item.quantity, item.sort_order ?? idx, now);
       });
     }
   });

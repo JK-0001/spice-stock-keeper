@@ -520,5 +520,29 @@ export function initDatabase(): void {
     CREATE INDEX IF NOT EXISTS idx_builty_items_parent ON builty_items(builty_id);
   `);
 
+  // Master lists for autocomplete seeded by Excel import. These hold names
+  // that aren't yet referenced by any inventory/sale-order/builty row.
+  // name is NOCASE so "Chilli" and "chilli" collapse to one entry.
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS items_master (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL UNIQUE COLLATE NOCASE,
+      created_at TEXT NOT NULL
+    );
+  `);
+
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS parties_master (
+      id TEXT PRIMARY KEY,
+      name TEXT NOT NULL UNIQUE COLLATE NOCASE,
+      created_at TEXT NOT NULL
+    );
+  `);
+
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_items_master_name ON items_master(name);
+    CREATE INDEX IF NOT EXISTS idx_parties_master_name ON parties_master(name);
+  `);
+
   console.log('Database initialized successfully');
 }
