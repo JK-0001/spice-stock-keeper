@@ -520,14 +520,20 @@ export function initDatabase(): void {
     CREATE INDEX IF NOT EXISTS idx_builty_items_parent ON builty_items(builty_id);
   `);
 
-  // Master lists for autocomplete seeded by Excel import. These hold names
-  // that aren't yet referenced by any inventory/sale-order/builty row.
-  // name is NOCASE so "Chilli" and "chilli" collapse to one entry.
+  // Master lists for Items and Parties — browsable/editable records plus
+  // the autocomplete feed. name is UNIQUE COLLATE NOCASE so "Chilli" and
+  // "chilli" collapse. v1.0.4 shipped these with just `name`; the migration
+  // block below adds the rest of the columns in-place for existing DBs.
   db.exec(`
     CREATE TABLE IF NOT EXISTS items_master (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL UNIQUE COLLATE NOCASE,
-      created_at TEXT NOT NULL
+      unit TEXT,
+      brand TEXT,
+      hsn_code TEXT,
+      notes TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT
     );
   `);
 
@@ -535,7 +541,13 @@ export function initDatabase(): void {
     CREATE TABLE IF NOT EXISTS parties_master (
       id TEXT PRIMARY KEY,
       name TEXT NOT NULL UNIQUE COLLATE NOCASE,
-      created_at TEXT NOT NULL
+      phone TEXT,
+      address TEXT,
+      city TEXT,
+      gstin TEXT,
+      notes TEXT,
+      created_at TEXT NOT NULL,
+      updated_at TEXT
     );
   `);
 
@@ -543,6 +555,62 @@ export function initDatabase(): void {
     CREATE INDEX IF NOT EXISTS idx_items_master_name ON items_master(name);
     CREATE INDEX IF NOT EXISTS idx_parties_master_name ON parties_master(name);
   `);
+
+  // Migration: add new master columns on existing v1.0.4 DBs
+  try {
+    const im = db.prepare('PRAGMA table_info(items_master)').all() as Array<{ name: string }>;
+    const existing = new Set(im.map((c) => c.name));
+    const toAdd: Array<[string, string]> = [
+      ['unit', 'TEXT'],
+      ['brand', 'TEXT'],
+      ['hsn_code', 'TEXT'],
+      ['notes', 'TEXT'],
+      ['updated_at', 'TEXT'],
+    ];
+    for (const [col, type] of toAdd) {
+      if (!existing.has(col)) {
+        db.exec(`ALTER TABLE items_master ADD COLUMN ${col} ${type};`);
+      }
+    }
+  } catch (error) {
+    console.error('Error extending items_master:', error);
+  }
+
+  try {
+    const pm = db.prepare('PRAGMA table_info(parties_master)').all() as Array<{ name: string }>;
+    const existing = new Set(pm.map((c) => c.name));
+    const toAdd: Array<[string, string]> = [
+      ['phone', 'TEXT'],
+      ['address', 'TEXT'],
+      ['city', 'TEXT'],
+      ['gstin', 'TEXT'],
+      ['notes', 'TEXT'],
+      ['updated_at', 'TEXT'],
+    ];
+    for (const [col, type] of toAdd) {
+      if (!existing.has(col)) {
+        db.exec(`ALTER TABLE parties_master ADD COLUMN ${col} ${type};`);
+      }
+    }
+  } catch (error) {
+    console.error('Error extending parties_master:', error);
+  }
+
+  // Migration: add unit column to sale_order_items and builty_items so the
+  // measurement unit (kg / katta / bag / pcs …) is snapshotted at save time,
+  // keeping historical orders stable even if the item master's unit changes.
+  try {
+    const soCols = db.prepare('PRAGMA table_info(sale_order_items)').all() as Array<{ name: string }>;
+    if (!soCols.some((c) => c.name === 'unit')) {
+      db.exec(`ALTER TABLE sale_order_items ADD COLUMN unit TEXT;`);
+    }
+    const btCols = db.prepare('PRAGMA table_info(builty_items)').all() as Array<{ name: string }>;
+    if (!btCols.some((c) => c.name === 'unit')) {
+      db.exec(`ALTER TABLE builty_items ADD COLUMN unit TEXT;`);
+    }
+  } catch (error) {
+    console.error('Error adding unit column to line-item tables:', error);
+  }
 
   console.log('Database initialized successfully');
 }

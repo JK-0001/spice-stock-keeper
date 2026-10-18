@@ -22,7 +22,7 @@ export function exportSaleOrderToPDF(order: SaleOrderWithItems) {
     String(i + 1),
     it.item_name,
     it.marka || '—',
-    String(it.quantity),
+    it.unit ? `${it.quantity} ${it.unit}` : String(it.quantity),
     String(it.rate),
     it.discount_percent != null ? `${it.discount_percent}%` : '—',
   ]);
@@ -81,5 +81,7 @@ export function exportSaleOrderToPDF(order: SaleOrderWithItems) {
   }
 
   const dataUrl = doc.output('dataurl') as unknown as string;
-  window.electronAPI.printPDF(dataUrl);
+  // Sale Orders are always printed 2 up (customer + file copy). The main
+  // process opens the OS print dialog with copies pre-set to 2.
+  window.electronAPI.printPDF(dataUrl, { copies: 2, autoPrint: true });
 }

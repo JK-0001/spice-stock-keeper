@@ -145,7 +145,9 @@ export default function SaleOrders() {
                                       <td className="px-3 py-2 text-muted-foreground">
                                         {it.marka || '—'}
                                       </td>
-                                      <td className="px-3 py-2 text-right tabular-nums">{it.quantity}</td>
+                                      <td className="px-3 py-2 text-right tabular-nums">
+                                        {it.unit ? `${it.quantity} ${it.unit}` : it.quantity}
+                                      </td>
                                       <td className="px-3 py-2 text-right tabular-nums">{it.rate}</td>
                                       <td className="px-3 py-2 text-right tabular-nums">
                                         {it.discount_percent != null ? `${it.discount_percent}%` : '—'}

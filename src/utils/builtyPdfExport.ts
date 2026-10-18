@@ -16,18 +16,23 @@ export function exportBuiltyToPDF(builty: BuiltyWithItems) {
 
   const total = builty.items.reduce((s, it) => s + Number(it.quantity || 0), 0);
 
+  // Totals across units only make sense when every row shares one unit.
+  // Otherwise show the number alone — the per-row cells already carry units.
+  const units = new Set(builty.items.map((it) => (it.unit ?? '').trim()).filter(Boolean));
+  const totalText = units.size === 1 ? `${total} ${[...units][0]}` : String(total);
+
   const body = builty.items.map((it, i) => [
     String(i + 1),
     it.item_name,
     it.marka || '—',
-    String(it.quantity),
+    it.unit ? `${it.quantity} ${it.unit}` : String(it.quantity),
   ]);
 
   autoTable(doc, {
     startY: 50,
     margin: { left: 5, right: 5 },
     tableWidth: 'auto',
-    head: [['#', 'Item Name', 'Marka', 'Quantity (Katta)']],
+    head: [['#', 'Item Name', 'Marka', 'Quantity']],
     body,
     theme: 'striped',
     styles: {
@@ -52,7 +57,7 @@ export function exportBuiltyToPDF(builty: BuiltyWithItems) {
       2: { cellWidth: 55 },
       3: { cellWidth: 40 },
     },
-    foot: [['', 'Total', '', String(total)]],
+    foot: [['', 'Total', '', totalText]],
     footStyles: {
       fillColor: [255, 179, 45],
       textColor: [0, 0, 0],
@@ -84,5 +89,7 @@ export function exportBuiltyToPDF(builty: BuiltyWithItems) {
   }
 
   const dataUrl = doc.output('dataurl') as unknown as string;
-  window.electronAPI.printPDF(dataUrl);
+  // Builtys are always printed 2 up (one for the office, one for the driver).
+  // The main process opens the OS print dialog with copies pre-set to 2.
+  window.electronAPI.printPDF(dataUrl, { copies: 2, autoPrint: true });
 }

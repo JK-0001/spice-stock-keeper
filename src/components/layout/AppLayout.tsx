@@ -1,6 +1,6 @@
 import { ReactNode, useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Package, Warehouse, FileText, Menu, X, Receipt, Truck, Settings as SettingsIcon } from 'lucide-react';
+import { Package, Warehouse, FileText, Menu, X, Receipt, Truck, Settings as SettingsIcon, Users, Boxes } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Button } from '@/components/ui/button';
 
@@ -13,6 +13,8 @@ const navItems = [
   { href: '/cold-storages', label: 'Cold Storages', icon: Warehouse },
   { href: '/sale-orders', label: 'Sale Orders', icon: Receipt },
   { href: '/builty', label: 'Builty', icon: Truck },
+  { href: '/items', label: 'Items', icon: Boxes },
+  { href: '/parties', label: 'Parties', icon: Users },
   { href: '/reports', label: 'Reports', icon: FileText },
 ];
 

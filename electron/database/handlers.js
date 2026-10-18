@@ -376,6 +376,136 @@ export function importPartiesMaster(names) {
     tx(names);
     return { inserted, skipped };
 }
+// ─── Items Master CRUD ───────────────────────────────────────────
+export function getItemsMaster() {
+    const db = getDatabase();
+    return db
+        .prepare(`SELECT * FROM items_master ORDER BY name COLLATE NOCASE ASC`)
+        .all();
+}
+export function getItemByName(name) {
+    const db = getDatabase();
+    const trimmed = name.trim();
+    if (!trimmed)
+        return null;
+    return db
+        .prepare(`SELECT * FROM items_master WHERE name = ? COLLATE NOCASE LIMIT 1`)
+        .get(trimmed) ?? null;
+}
+export function addItemMaster(data) {
+    const db = getDatabase();
+    const id = uuidv4();
+    const now = new Date().toISOString();
+    const name = data.name.trim();
+    if (!name)
+        throw new Error('Item name is required');
+    db.prepare(`INSERT INTO items_master (id, name, unit, brand, hsn_code, notes, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).run(id, name, nz(data.unit), nz(data.brand), nz(data.hsn_code), nz(data.notes), now, now);
+    return db.prepare(`SELECT * FROM items_master WHERE id = ?`).get(id);
+}
+export function updateItemMaster(id, data) {
+    const db = getDatabase();
+    const fields = [];
+    const values = [];
+    if (data.name !== undefined) {
+        const n = (data.name ?? '').trim();
+        if (!n)
+            throw new Error('Item name is required');
+        fields.push('name = ?');
+        values.push(n);
+    }
+    if (data.unit !== undefined) {
+        fields.push('unit = ?');
+        values.push(nz(data.unit));
+    }
+    if (data.brand !== undefined) {
+        fields.push('brand = ?');
+        values.push(nz(data.brand));
+    }
+    if (data.hsn_code !== undefined) {
+        fields.push('hsn_code = ?');
+        values.push(nz(data.hsn_code));
+    }
+    if (data.notes !== undefined) {
+        fields.push('notes = ?');
+        values.push(nz(data.notes));
+    }
+    fields.push('updated_at = ?');
+    values.push(new Date().toISOString());
+    values.push(id);
+    db.prepare(`UPDATE items_master SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+    return db.prepare(`SELECT * FROM items_master WHERE id = ?`).get(id);
+}
+export function deleteItemMaster(id) {
+    const db = getDatabase();
+    db.prepare(`DELETE FROM items_master WHERE id = ?`).run(id);
+}
+// ─── Parties Master CRUD ─────────────────────────────────────────
+export function getPartiesMaster() {
+    const db = getDatabase();
+    return db
+        .prepare(`SELECT * FROM parties_master ORDER BY name COLLATE NOCASE ASC`)
+        .all();
+}
+export function addPartyMaster(data) {
+    const db = getDatabase();
+    const id = uuidv4();
+    const now = new Date().toISOString();
+    const name = data.name.trim();
+    if (!name)
+        throw new Error('Party name is required');
+    db.prepare(`INSERT INTO parties_master (id, name, phone, address, city, gstin, notes, created_at, updated_at)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).run(id, name, nz(data.phone), nz(data.address), nz(data.city), nz(data.gstin), nz(data.notes), now, now);
+    return db.prepare(`SELECT * FROM parties_master WHERE id = ?`).get(id);
+}
+export function updatePartyMaster(id, data) {
+    const db = getDatabase();
+    const fields = [];
+    const values = [];
+    if (data.name !== undefined) {
+        const n = (data.name ?? '').trim();
+        if (!n)
+            throw new Error('Party name is required');
+        fields.push('name = ?');
+        values.push(n);
+    }
+    if (data.phone !== undefined) {
+        fields.push('phone = ?');
+        values.push(nz(data.phone));
+    }
+    if (data.address !== undefined) {
+        fields.push('address = ?');
+        values.push(nz(data.address));
+    }
+    if (data.city !== undefined) {
+        fields.push('city = ?');
+        values.push(nz(data.city));
+    }
+    if (data.gstin !== undefined) {
+        fields.push('gstin = ?');
+        values.push(nz(data.gstin));
+    }
+    if (data.notes !== undefined) {
+        fields.push('notes = ?');
+        values.push(nz(data.notes));
+    }
+    fields.push('updated_at = ?');
+    values.push(new Date().toISOString());
+    values.push(id);
+    db.prepare(`UPDATE parties_master SET ${fields.join(', ')} WHERE id = ?`).run(...values);
+    return db.prepare(`SELECT * FROM parties_master WHERE id = ?`).get(id);
+}
+export function deletePartyMaster(id) {
+    const db = getDatabase();
+    db.prepare(`DELETE FROM parties_master WHERE id = ?`).run(id);
+}
+// Treat empty strings as null so NULL-based "not set" semantics stay clean.
+function nz(v) {
+    if (v == null)
+        return null;
+    const t = String(v).trim();
+    return t === '' ? null : t;
+}
 // ─── FY serial helper ─────────────────────────────────────────────
 // Indian financial year: April 1 → March 31.
 // A date on/after Apr 1 of year Y belongs to FY Y-(Y+1); before Apr 1 belongs to (Y-1)-Y.
@@ -432,10 +562,10 @@ export function addSaleOrder(data) {
     const tx = db.transaction(() => {
         db.prepare(`INSERT INTO sale_orders (id, serial_no, order_date, party_name, notes, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?)`).run(id, serial, data.order_date, data.party_name, data.notes ?? null, now, now);
-        const insItem = db.prepare(`INSERT INTO sale_order_items (id, sale_order_id, item_name, marka, quantity, rate, discount_percent, sort_order, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+        const insItem = db.prepare(`INSERT INTO sale_order_items (id, sale_order_id, item_name, marka, quantity, unit, rate, discount_percent, sort_order, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
         data.items.forEach((item, idx) => {
-            insItem.run(uuidv4(), id, item.item_name, item.marka ?? null, item.quantity, item.rate, item.discount_percent ?? null, item.sort_order ?? idx, now);
+            insItem.run(uuidv4(), id, item.item_name, item.marka ?? null, item.quantity, item.unit ?? null, item.rate, item.discount_percent ?? null, item.sort_order ?? idx, now);
         });
     });
     tx();
@@ -467,10 +597,10 @@ export function updateSaleOrder(id, data) {
         }
         if (data.items !== undefined) {
             db.prepare(`DELETE FROM sale_order_items WHERE sale_order_id = ?`).run(id);
-            const insItem = db.prepare(`INSERT INTO sale_order_items (id, sale_order_id, item_name, marka, quantity, rate, discount_percent, sort_order, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`);
+            const insItem = db.prepare(`INSERT INTO sale_order_items (id, sale_order_id, item_name, marka, quantity, unit, rate, discount_percent, sort_order, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`);
             data.items.forEach((item, idx) => {
-                insItem.run(uuidv4(), id, item.item_name, item.marka ?? null, item.quantity, item.rate, item.discount_percent ?? null, item.sort_order ?? idx, now);
+                insItem.run(uuidv4(), id, item.item_name, item.marka ?? null, item.quantity, item.unit ?? null, item.rate, item.discount_percent ?? null, item.sort_order ?? idx, now);
             });
         }
     });
@@ -510,10 +640,10 @@ export function addBuilty(data) {
     const tx = db.transaction(() => {
         db.prepare(`INSERT INTO builty (id, serial_no, builty_date, party_name, notes, created_at, updated_at)
        VALUES (?, ?, ?, ?, ?, ?, ?)`).run(id, serial, data.builty_date, data.party_name, data.notes ?? null, now, now);
-        const insItem = db.prepare(`INSERT INTO builty_items (id, builty_id, item_name, marka, quantity, sort_order, created_at)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`);
+        const insItem = db.prepare(`INSERT INTO builty_items (id, builty_id, item_name, marka, quantity, unit, sort_order, created_at)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?)`);
         data.items.forEach((item, idx) => {
-            insItem.run(uuidv4(), id, item.item_name, item.marka ?? null, item.quantity, item.sort_order ?? idx, now);
+            insItem.run(uuidv4(), id, item.item_name, item.marka ?? null, item.quantity, item.unit ?? null, item.sort_order ?? idx, now);
         });
     });
     tx();
@@ -545,10 +675,10 @@ export function updateBuilty(id, data) {
         }
         if (data.items !== undefined) {
             db.prepare(`DELETE FROM builty_items WHERE builty_id = ?`).run(id);
-            const insItem = db.prepare(`INSERT INTO builty_items (id, builty_id, item_name, marka, quantity, sort_order, created_at)
-         VALUES (?, ?, ?, ?, ?, ?, ?)`);
+            const insItem = db.prepare(`INSERT INTO builty_items (id, builty_id, item_name, marka, quantity, unit, sort_order, created_at)
+         VALUES (?, ?, ?, ?, ?, ?, ?, ?)`);
             data.items.forEach((item, idx) => {
-                insItem.run(uuidv4(), id, item.item_name, item.marka ?? null, item.quantity, item.sort_order ?? idx, now);
+                insItem.run(uuidv4(), id, item.item_name, item.marka ?? null, item.quantity, item.unit ?? null, item.sort_order ?? idx, now);
             });
         }
     });

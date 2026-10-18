@@ -68,6 +68,7 @@ export interface SaleOrderItem {
     item_name: string;
     marka: string | null;
     quantity: number;
+    unit: string | null;
     rate: number;
     discount_percent: number | null;
     sort_order: number;
@@ -104,9 +105,35 @@ export interface BuiltyItem {
     item_name: string;
     marka: string | null;
     quantity: number;
+    unit: string | null;
     sort_order: number;
     created_at: string;
 }
+export interface ItemMaster {
+    id: string;
+    name: string;
+    unit: string | null;
+    brand: string | null;
+    hsn_code: string | null;
+    notes: string | null;
+    created_at: string;
+    updated_at: string | null;
+}
+export type NewItemMaster = Omit<ItemMaster, 'id' | 'created_at' | 'updated_at'>;
+export type UpdateItemMaster = Partial<NewItemMaster>;
+export interface PartyMaster {
+    id: string;
+    name: string;
+    phone: string | null;
+    address: string | null;
+    city: string | null;
+    gstin: string | null;
+    notes: string | null;
+    created_at: string;
+    updated_at: string | null;
+}
+export type NewPartyMaster = Omit<PartyMaster, 'id' | 'created_at' | 'updated_at'>;
+export type UpdatePartyMaster = Partial<NewPartyMaster>;
 export interface BuiltyWithItems extends Builty {
     items: BuiltyItem[];
 }

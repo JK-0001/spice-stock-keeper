@@ -202,6 +202,19 @@ app.on('ready', () => {
     handlers.importPartiesMaster(names)
   );
 
+  // Items Master CRUD
+  ipcMain.handle('db:getItemsMaster', () => handlers.getItemsMaster());
+  ipcMain.handle('db:getItemByName', (_, name: string) => handlers.getItemByName(name));
+  ipcMain.handle('db:addItemMaster', (_, data) => handlers.addItemMaster(data));
+  ipcMain.handle('db:updateItemMaster', (_, id, data) => handlers.updateItemMaster(id, data));
+  ipcMain.handle('db:deleteItemMaster', (_, id) => handlers.deleteItemMaster(id));
+
+  // Parties Master CRUD
+  ipcMain.handle('db:getPartiesMaster', () => handlers.getPartiesMaster());
+  ipcMain.handle('db:addPartyMaster', (_, data) => handlers.addPartyMaster(data));
+  ipcMain.handle('db:updatePartyMaster', (_, id, data) => handlers.updatePartyMaster(id, data));
+  ipcMain.handle('db:deletePartyMaster', (_, id) => handlers.deletePartyMaster(id));
+
   // Backup handlers
   ipcMain.handle('backup:create', () => {
     return createBackup();
@@ -215,26 +228,63 @@ app.on('ready', () => {
     return await importDatabase();
   });
 
-  // Print PDF handler - opens PDF in a preview window with built-in Print/Save buttons
-  ipcMain.handle('print:pdf', (_, dataUrl: string) => {
-    return new Promise<{ success: boolean; message: string }>((resolve) => {
-      const printWindow = new BrowserWindow({
-        show: true,
-        width: 900,
-        height: 700,
-        title: 'SpiceIn - Print Preview',
-        modal: true,
-        parent: mainWindow ?? undefined,
-        resizable: true,
-      });
+  // Print PDF handler.
+  //
+  //   printPDF(dataUrl)                                → opens a preview window
+  //       with Chromium's PDF viewer; user prints manually (default copies 1).
+  //   printPDF(dataUrl, { copies: 2, autoPrint: true }) → opens a hidden
+  //       off-screen window, loads the PDF, then triggers the OS print
+  //       dialog with `copies` pre-selected. Used by Sale Order and Builty
+  //       so the operator doesn't need to re-type 2 every print.
+  ipcMain.handle(
+    'print:pdf',
+    (_, dataUrl: string, options?: { copies?: number; autoPrint?: boolean }) => {
+      const copies = Math.max(1, Math.floor(options?.copies ?? 1));
+      const autoPrint = !!options?.autoPrint;
 
-      printWindow.loadURL(dataUrl);
+      return new Promise<{ success: boolean; message: string }>((resolve) => {
+        const printWindow = new BrowserWindow({
+          show: !autoPrint,
+          width: 900,
+          height: 700,
+          title: 'SpiceIn - Print Preview',
+          modal: !autoPrint,
+          parent: autoPrint ? undefined : mainWindow ?? undefined,
+          resizable: true,
+        });
 
-      printWindow.on('closed', () => {
-        resolve({ success: true, message: 'Preview closed' });
+        printWindow.loadURL(dataUrl);
+
+        if (autoPrint) {
+          // Wait for the PDF to render inside Chromium's PDF plugin, then
+          // trigger the OS print dialog with the requested copies.
+          printWindow.webContents.once('did-finish-load', () => {
+            setTimeout(() => {
+              printWindow.webContents.print(
+                { copies, silent: false },
+                (success, failureReason) => {
+                  resolve({
+                    success,
+                    message: success ? 'Printed' : failureReason || 'Print cancelled',
+                  });
+                  if (!printWindow.isDestroyed()) printWindow.close();
+                }
+              );
+            }, 400);
+          });
+          // Safety net: if the window gets closed without print firing,
+          // still resolve so the renderer promise never dangles.
+          printWindow.on('closed', () => {
+            resolve({ success: true, message: 'Preview closed' });
+          });
+        } else {
+          printWindow.on('closed', () => {
+            resolve({ success: true, message: 'Preview closed' });
+          });
+        }
       });
-    });
-  });
+    }
+  );
 
   // Hybrid backup system:
   // 1. Check and create backup on startup if last backup is > 24 hours old

@@ -1,7 +1,7 @@
 {
   "name": "spicein",
   "productName": "SpiceIn",
-  "version": "1.0.4",
+  "version": "1.0.5",
   "description": "Desktop application for spice stock inventory management with local SQLite storage",
   "main": "dist-electron/main.js",
   "author": "Jatin Khatri",

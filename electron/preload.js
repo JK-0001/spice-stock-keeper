@@ -23,7 +23,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
     createManualBackup: () => ipcRenderer.invoke('backup:createManual'),
     importDatabase: () => ipcRenderer.invoke('backup:importDatabase'),
     // Print API
-    printPDF: (dataUrl) => ipcRenderer.invoke('print:pdf', dataUrl),
+    printPDF: (dataUrl, options) => ipcRenderer.invoke('print:pdf', dataUrl, options),
     // Sale Order API
     getSaleOrders: () => ipcRenderer.invoke('db:getSaleOrders'),
     getSaleOrder: (id) => ipcRenderer.invoke('db:getSaleOrder', id),
@@ -43,4 +43,15 @@ contextBridge.exposeInMainWorld('electronAPI', {
     // Excel master-list import
     importItemsMaster: (names) => ipcRenderer.invoke('db:importItemsMaster', names),
     importPartiesMaster: (names) => ipcRenderer.invoke('db:importPartiesMaster', names),
+    // Items Master CRUD
+    getItemsMaster: () => ipcRenderer.invoke('db:getItemsMaster'),
+    getItemByName: (name) => ipcRenderer.invoke('db:getItemByName', name),
+    addItemMaster: (data) => ipcRenderer.invoke('db:addItemMaster', data),
+    updateItemMaster: (id, data) => ipcRenderer.invoke('db:updateItemMaster', id, data),
+    deleteItemMaster: (id) => ipcRenderer.invoke('db:deleteItemMaster', id),
+    // Parties Master CRUD
+    getPartiesMaster: () => ipcRenderer.invoke('db:getPartiesMaster'),
+    addPartyMaster: (data) => ipcRenderer.invoke('db:addPartyMaster', data),
+    updatePartyMaster: (id, data) => ipcRenderer.invoke('db:updatePartyMaster', id, data),
+    deletePartyMaster: (id) => ipcRenderer.invoke('db:deletePartyMaster', id),
 });

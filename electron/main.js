@@ -156,6 +156,17 @@ app.on('ready', () => {
     // Excel master-list import handlers
     ipcMain.handle('db:importItemsMaster', (_, names) => handlers.importItemsMaster(names));
     ipcMain.handle('db:importPartiesMaster', (_, names) => handlers.importPartiesMaster(names));
+    // Items Master CRUD
+    ipcMain.handle('db:getItemsMaster', () => handlers.getItemsMaster());
+    ipcMain.handle('db:getItemByName', (_, name) => handlers.getItemByName(name));
+    ipcMain.handle('db:addItemMaster', (_, data) => handlers.addItemMaster(data));
+    ipcMain.handle('db:updateItemMaster', (_, id, data) => handlers.updateItemMaster(id, data));
+    ipcMain.handle('db:deleteItemMaster', (_, id) => handlers.deleteItemMaster(id));
+    // Parties Master CRUD
+    ipcMain.handle('db:getPartiesMaster', () => handlers.getPartiesMaster());
+    ipcMain.handle('db:addPartyMaster', (_, data) => handlers.addPartyMaster(data));
+    ipcMain.handle('db:updatePartyMaster', (_, id, data) => handlers.updatePartyMaster(id, data));
+    ipcMain.handle('db:deletePartyMaster', (_, id) => handlers.deletePartyMaster(id));
     // Backup handlers
     ipcMain.handle('backup:create', () => {
         return createBackup();
@@ -166,22 +177,54 @@ app.on('ready', () => {
     ipcMain.handle('backup:importDatabase', async () => {
         return await importDatabase();
     });
-    // Print PDF handler - opens PDF in a preview window with built-in Print/Save buttons
-    ipcMain.handle('print:pdf', (_, dataUrl) => {
+    // Print PDF handler.
+    //
+    //   printPDF(dataUrl)                                → opens a preview window
+    //       with Chromium's PDF viewer; user prints manually (default copies 1).
+    //   printPDF(dataUrl, { copies: 2, autoPrint: true }) → opens a hidden
+    //       off-screen window, loads the PDF, then triggers the OS print
+    //       dialog with `copies` pre-selected. Used by Sale Order and Builty
+    //       so the operator doesn't need to re-type 2 every print.
+    ipcMain.handle('print:pdf', (_, dataUrl, options) => {
+        const copies = Math.max(1, Math.floor(options?.copies ?? 1));
+        const autoPrint = !!options?.autoPrint;
         return new Promise((resolve) => {
             const printWindow = new BrowserWindow({
-                show: true,
+                show: !autoPrint,
                 width: 900,
                 height: 700,
                 title: 'SpiceIn - Print Preview',
-                modal: true,
-                parent: mainWindow ?? undefined,
+                modal: !autoPrint,
+                parent: autoPrint ? undefined : mainWindow ?? undefined,
                 resizable: true,
             });
             printWindow.loadURL(dataUrl);
-            printWindow.on('closed', () => {
-                resolve({ success: true, message: 'Preview closed' });
-            });
+            if (autoPrint) {
+                // Wait for the PDF to render inside Chromium's PDF plugin, then
+                // trigger the OS print dialog with the requested copies.
+                printWindow.webContents.once('did-finish-load', () => {
+                    setTimeout(() => {
+                        printWindow.webContents.print({ copies, silent: false }, (success, failureReason) => {
+                            resolve({
+                                success,
+                                message: success ? 'Printed' : failureReason || 'Print cancelled',
+                            });
+                            if (!printWindow.isDestroyed())
+                                printWindow.close();
+                        });
+                    }, 400);
+                });
+                // Safety net: if the window gets closed without print firing,
+                // still resolve so the renderer promise never dangles.
+                printWindow.on('closed', () => {
+                    resolve({ success: true, message: 'Preview closed' });
+                });
+            }
+            else {
+                printWindow.on('closed', () => {
+                    resolve({ success: true, message: 'Preview closed' });
+                });
+            }
         });
     });
     // Hybrid backup system:

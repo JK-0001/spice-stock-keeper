@@ -1,4 +1,8 @@
-import type { ColdStorage, Outgoing, InventoryWithStorage, NewColdStorage, NewInventory, NewOutgoing, UpdateInventory, UpdateOutgoing, InventoryFilters, DashboardStats, SaleOrderWithItems, NewSaleOrder, UpdateSaleOrder, BuiltyWithItems, NewBuilty, UpdateBuilty } from './types';
+import type { ColdStorage, Outgoing, InventoryWithStorage, NewColdStorage, NewInventory, NewOutgoing, UpdateInventory, UpdateOutgoing, InventoryFilters, DashboardStats, SaleOrderWithItems, NewSaleOrder, UpdateSaleOrder, BuiltyWithItems, NewBuilty, UpdateBuilty, ItemMaster, NewItemMaster, UpdateItemMaster, PartyMaster, NewPartyMaster, UpdatePartyMaster } from './types';
+type PrintOptions = {
+    copies?: number;
+    autoPrint?: boolean;
+};
 declare global {
     interface Window {
         electronAPI: {
@@ -29,7 +33,7 @@ declare global {
                 cancelled?: boolean;
                 needsRestart?: boolean;
             }>;
-            printPDF: (dataUrl: string) => Promise<{
+            printPDF: (dataUrl: string, options?: PrintOptions) => Promise<{
                 success: boolean;
                 message: string;
             }>;
@@ -54,6 +58,16 @@ declare global {
                 inserted: number;
                 skipped: number;
             }>;
+            getItemsMaster: () => Promise<ItemMaster[]>;
+            getItemByName: (name: string) => Promise<ItemMaster | null>;
+            addItemMaster: (data: NewItemMaster) => Promise<ItemMaster>;
+            updateItemMaster: (id: string, data: UpdateItemMaster) => Promise<ItemMaster>;
+            deleteItemMaster: (id: string) => Promise<void>;
+            getPartiesMaster: () => Promise<PartyMaster[]>;
+            addPartyMaster: (data: NewPartyMaster) => Promise<PartyMaster>;
+            updatePartyMaster: (id: string, data: UpdatePartyMaster) => Promise<PartyMaster>;
+            deletePartyMaster: (id: string) => Promise<void>;
         };
     }
 }
+export {};

@@ -136,7 +136,7 @@ export default function Builty() {
                                   <tr>
                                     <th className="text-left px-3 py-2">Item</th>
                                     <th className="text-left px-3 py-2">Marka</th>
-                                    <th className="text-right px-3 py-2">Quantity (Katta)</th>
+                                    <th className="text-right px-3 py-2">Quantity</th>
                                   </tr>
                                 </thead>
                                 <tbody>
@@ -144,14 +144,23 @@ export default function Builty() {
                                     <tr key={it.id} className="border-t border-border">
                                       <td className="px-3 py-2">{it.item_name}</td>
                                       <td className="px-3 py-2 text-muted-foreground">{it.marka || '—'}</td>
-                                      <td className="px-3 py-2 text-right tabular-nums">{it.quantity}</td>
+                                      <td className="px-3 py-2 text-right tabular-nums">
+                                        {it.unit ? `${it.quantity} ${it.unit}` : it.quantity}
+                                      </td>
                                     </tr>
                                   ))}
                                 </tbody>
                                 <tfoot className="border-t-2 border-border bg-muted/30">
                                   <tr>
                                     <td className="px-3 py-2 text-right font-medium" colSpan={2}>Total</td>
-                                    <td className="px-3 py-2 text-right font-bold tabular-nums">{total}</td>
+                                    <td className="px-3 py-2 text-right font-bold tabular-nums">
+                                      {(() => {
+                                        const u = new Set(
+                                          b.items.map((x) => (x.unit ?? '').trim()).filter(Boolean)
+                                        );
+                                        return u.size === 1 ? `${total} ${[...u][0]}` : total;
+                                      })()}
+                                    </td>
                                   </tr>
                                 </tfoot>
                               </table>

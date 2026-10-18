@@ -1,4 +1,4 @@
-import type { ColdStorage, Outgoing, InventoryWithStorage, NewColdStorage, NewInventory, NewOutgoing, UpdateInventory, UpdateOutgoing, InventoryFilters, DashboardStats, SaleOrderWithItems, NewSaleOrder, UpdateSaleOrder, BuiltyWithItems, NewBuilty, UpdateBuilty } from '../types';
+import type { ColdStorage, Outgoing, InventoryWithStorage, NewColdStorage, NewInventory, NewOutgoing, UpdateInventory, UpdateOutgoing, InventoryFilters, DashboardStats, SaleOrderWithItems, NewSaleOrder, UpdateSaleOrder, BuiltyWithItems, NewBuilty, UpdateBuilty, ItemMaster, NewItemMaster, UpdateItemMaster, PartyMaster, NewPartyMaster, UpdatePartyMaster } from '../types';
 export declare function getColdStorages(): ColdStorage[];
 export declare function addColdStorage(data: NewColdStorage): ColdStorage;
 export declare function getInventoryList(filters?: InventoryFilters): InventoryWithStorage[];
@@ -21,6 +21,15 @@ export declare function importPartiesMaster(names: string[]): {
     inserted: number;
     skipped: number;
 };
+export declare function getItemsMaster(): ItemMaster[];
+export declare function getItemByName(name: string): ItemMaster | null;
+export declare function addItemMaster(data: NewItemMaster): ItemMaster;
+export declare function updateItemMaster(id: string, data: UpdateItemMaster): ItemMaster;
+export declare function deleteItemMaster(id: string): void;
+export declare function getPartiesMaster(): PartyMaster[];
+export declare function addPartyMaster(data: NewPartyMaster): PartyMaster;
+export declare function updatePartyMaster(id: string, data: UpdatePartyMaster): PartyMaster;
+export declare function deletePartyMaster(id: string): void;
 export declare function getSaleOrders(): SaleOrderWithItems[];
 export declare function getSaleOrder(id: string): SaleOrderWithItems | null;
 export declare function addSaleOrder(data: NewSaleOrder): SaleOrderWithItems;

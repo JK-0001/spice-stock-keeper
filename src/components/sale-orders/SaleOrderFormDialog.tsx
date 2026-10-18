@@ -14,6 +14,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { AutocompleteInput } from '@/components/ui/autocomplete-input';
 import { useAddSaleOrder, useUpdateSaleOrder } from '@/hooks/useSaleOrders';
 import { usePartySuggestions, useItemNameSuggestions, useMarkaSuggestions } from '@/hooks/useSuggestions';
+import { useItemsMaster } from '@/hooks/useMasters';
+import { COMMON_UNITS } from '@/components/masters/ItemFormDialog';
 import { useToast } from '@/hooks/use-toast';
 import type { SaleOrderWithItems, NewSaleOrderItem } from '@/lib/types';
 
@@ -28,11 +30,12 @@ type Row = {
   item_name: string;
   marka: string;
   quantity: string;
+  unit: string;
   rate: string;
   discount_percent: string;
 };
 
-const emptyRow: Row = { item_name: '', marka: '', quantity: '', rate: '', discount_percent: '' };
+const emptyRow: Row = { item_name: '', marka: '', quantity: '', unit: '', rate: '', discount_percent: '' };
 
 export function SaleOrderFormDialog({ order, trigger, open: openProp, onOpenChange }: Props) {
   const isEdit = !!order;
@@ -49,9 +52,16 @@ export function SaleOrderFormDialog({ order, trigger, open: openProp, onOpenChan
   const { data: partySuggestions = [] } = usePartySuggestions();
   const { data: itemSuggestions = [] } = useItemNameSuggestions();
   const { data: markaSuggestions = [] } = useMarkaSuggestions();
+  const { data: itemsMaster = [] } = useItemsMaster();
   const addMut = useAddSaleOrder();
   const updateMut = useUpdateSaleOrder();
   const { toast } = useToast();
+
+  // Lookup table: lowercase name → unit, so unit auto-fills when the operator
+  // picks a known item.
+  const unitByName = new Map(
+    itemsMaster.filter((i) => i.unit).map((i) => [i.name.toLowerCase(), i.unit as string])
+  );
 
   // Reset form when dialog opens or when switching order
   useEffect(() => {
@@ -66,6 +76,7 @@ export function SaleOrderFormDialog({ order, trigger, open: openProp, onOpenChan
               item_name: i.item_name,
               marka: i.marka ?? '',
               quantity: String(i.quantity),
+              unit: i.unit ?? '',
               rate: String(i.rate),
               discount_percent: i.discount_percent != null ? String(i.discount_percent) : '',
             }))
@@ -81,7 +92,22 @@ export function SaleOrderFormDialog({ order, trigger, open: openProp, onOpenChan
   }, [open, order]);
 
   const updateRow = (idx: number, patch: Partial<Row>) => {
-    setRows((rs) => rs.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
+    setRows((rs) =>
+      rs.map((r, i) => {
+        if (i !== idx) return r;
+        const next = { ...r, ...patch };
+        // When the item name changes and the user hasn't typed a custom unit
+        // yet (or the unit was auto-filled previously), pull the unit from the
+        // items master. If the item isn't in master, leave unit as-is.
+        if (patch.item_name !== undefined) {
+          const masterUnit = unitByName.get(patch.item_name.trim().toLowerCase());
+          if (masterUnit && (!r.unit || unitByName.get(r.item_name.trim().toLowerCase()) === r.unit)) {
+            next.unit = masterUnit;
+          }
+        }
+        return next;
+      })
+    );
   };
   const addRow = () => setRows((rs) => [...rs, { ...emptyRow }]);
   const removeRow = (idx: number) => setRows((rs) => (rs.length === 1 ? rs : rs.filter((_, i) => i !== idx)));
@@ -129,6 +155,7 @@ export function SaleOrderFormDialog({ order, trigger, open: openProp, onOpenChan
         item_name: r.item_name.trim(),
         marka: r.marka.trim() || null,
         quantity: qty,
+        unit: r.unit.trim() || null,
         rate,
         discount_percent: disc,
         sort_order: items.length,
@@ -197,6 +224,7 @@ export function SaleOrderFormDialog({ order, trigger, open: openProp, onOpenChan
                 <th className="text-left px-2 py-2 font-medium">Item Name *</th>
                 <th className="text-left px-2 py-2 font-medium">Marka</th>
                 <th className="text-right px-2 py-2 font-medium w-24">Quantity *</th>
+                <th className="text-left px-2 py-2 font-medium w-20">Unit</th>
                 <th className="text-right px-2 py-2 font-medium w-24">Rate *</th>
                 <th className="text-right px-2 py-2 font-medium w-20">(-)%</th>
                 <th className="w-10"></th>
@@ -229,6 +257,14 @@ export function SaleOrderFormDialog({ order, trigger, open: openProp, onOpenChan
                       className="text-right"
                       value={r.quantity}
                       onChange={(e) => updateRow(idx, { quantity: e.target.value })}
+                    />
+                  </td>
+                  <td className="px-2 py-1">
+                    <AutocompleteInput
+                      value={r.unit}
+                      onChange={(e) => updateRow(idx, { unit: e.target.value })}
+                      suggestions={COMMON_UNITS}
+                      placeholder="kg"
                     />
                   </td>
                   <td className="px-2 py-1">

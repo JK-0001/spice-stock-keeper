@@ -14,6 +14,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { AutocompleteInput } from '@/components/ui/autocomplete-input';
 import { useAddBuilty, useUpdateBuilty } from '@/hooks/useBuilty';
 import { usePartySuggestions, useItemNameSuggestions, useMarkaSuggestions } from '@/hooks/useSuggestions';
+import { useItemsMaster } from '@/hooks/useMasters';
+import { COMMON_UNITS } from '@/components/masters/ItemFormDialog';
 import { useToast } from '@/hooks/use-toast';
 import type { BuiltyWithItems, NewBuiltyItem } from '@/lib/types';
 
@@ -24,8 +26,8 @@ interface Props {
   onOpenChange?: (open: boolean) => void;
 }
 
-type Row = { item_name: string; marka: string; quantity: string };
-const emptyRow: Row = { item_name: '', marka: '', quantity: '' };
+type Row = { item_name: string; marka: string; quantity: string; unit: string };
+const emptyRow: Row = { item_name: '', marka: '', quantity: '', unit: '' };
 
 export function BuiltyFormDialog({ builty, trigger, open: openProp, onOpenChange }: Props) {
   const isEdit = !!builty;
@@ -42,9 +44,15 @@ export function BuiltyFormDialog({ builty, trigger, open: openProp, onOpenChange
   const { data: partySuggestions = [] } = usePartySuggestions();
   const { data: itemSuggestions = [] } = useItemNameSuggestions();
   const { data: markaSuggestions = [] } = useMarkaSuggestions();
+  const { data: itemsMaster = [] } = useItemsMaster();
   const addMut = useAddBuilty();
   const updateMut = useUpdateBuilty();
   const { toast } = useToast();
+
+  // Lookup table: lowercase name → unit from items master.
+  const unitByName = new Map(
+    itemsMaster.filter((i) => i.unit).map((i) => [i.name.toLowerCase(), i.unit as string])
+  );
 
   useEffect(() => {
     if (!open) return;
@@ -54,7 +62,12 @@ export function BuiltyFormDialog({ builty, trigger, open: openProp, onOpenChange
       setNotes(builty.notes ?? '');
       setRows(
         builty.items.length > 0
-          ? builty.items.map((i) => ({ item_name: i.item_name, marka: i.marka ?? '', quantity: String(i.quantity) }))
+          ? builty.items.map((i) => ({
+              item_name: i.item_name,
+              marka: i.marka ?? '',
+              quantity: String(i.quantity),
+              unit: i.unit ?? '',
+            }))
           : [{ ...emptyRow }]
       );
     } else {
@@ -67,7 +80,21 @@ export function BuiltyFormDialog({ builty, trigger, open: openProp, onOpenChange
   }, [open, builty]);
 
   const updateRow = (idx: number, patch: Partial<Row>) => {
-    setRows((rs) => rs.map((r, i) => (i === idx ? { ...r, ...patch } : r)));
+    setRows((rs) =>
+      rs.map((r, i) => {
+        if (i !== idx) return r;
+        const next = { ...r, ...patch };
+        // Auto-fill unit from items master when the item name changes and the
+        // operator hasn't manually overridden the unit.
+        if (patch.item_name !== undefined) {
+          const masterUnit = unitByName.get(patch.item_name.trim().toLowerCase());
+          if (masterUnit && (!r.unit || unitByName.get(r.item_name.trim().toLowerCase()) === r.unit)) {
+            next.unit = masterUnit;
+          }
+        }
+        return next;
+      })
+    );
   };
   const addRow = () => setRows((rs) => [...rs, { ...emptyRow }]);
   const removeRow = (idx: number) => setRows((rs) => (rs.length === 1 ? rs : rs.filter((_, i) => i !== idx)));
@@ -107,6 +134,7 @@ export function BuiltyFormDialog({ builty, trigger, open: openProp, onOpenChange
         item_name: r.item_name.trim(),
         marka: r.marka.trim() || null,
         quantity: qty,
+        unit: r.unit.trim() || null,
         sort_order: items.length,
       });
     }
@@ -172,7 +200,8 @@ export function BuiltyFormDialog({ builty, trigger, open: openProp, onOpenChange
               <tr>
                 <th className="text-left px-2 py-2 font-medium">Item Name *</th>
                 <th className="text-left px-2 py-2 font-medium">Marka</th>
-                <th className="text-right px-2 py-2 font-medium w-32">Quantity (Katta) *</th>
+                <th className="text-right px-2 py-2 font-medium w-24">Quantity *</th>
+                <th className="text-left px-2 py-2 font-medium w-20">Unit</th>
                 <th className="w-10"></th>
               </tr>
             </thead>
@@ -205,6 +234,14 @@ export function BuiltyFormDialog({ builty, trigger, open: openProp, onOpenChange
                       onChange={(e) => updateRow(idx, { quantity: e.target.value })}
                     />
                   </td>
+                  <td className="px-2 py-1">
+                    <AutocompleteInput
+                      value={r.unit}
+                      onChange={(e) => updateRow(idx, { unit: e.target.value })}
+                      suggestions={COMMON_UNITS}
+                      placeholder="katta"
+                    />
+                  </td>
                   <td className="px-1 py-1">
                     <Button
                       type="button"
@@ -223,7 +260,7 @@ export function BuiltyFormDialog({ builty, trigger, open: openProp, onOpenChange
               <tr>
                 <td className="px-2 py-2 text-right font-medium" colSpan={2}>Total</td>
                 <td className="px-2 py-2 text-right font-bold tabular-nums">{totalQty}</td>
-                <td></td>
+                <td colSpan={2}></td>
               </tr>
             </tfoot>
           </table>

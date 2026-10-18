@@ -11,6 +11,8 @@ import ColdStorages from "./pages/ColdStorages";
 import Reports from "./pages/Reports";
 import SaleOrders from "./pages/SaleOrders";
 import Builty from "./pages/Builty";
+import ItemsMaster from "./pages/ItemsMaster";
+import PartiesMaster from "./pages/PartiesMaster";
 import Settings from "./pages/Settings";
 import NotFound from "./pages/NotFound";
 
@@ -29,6 +31,8 @@ const App = () => (
           <Route path="/cold-storages" element={<AppLayout><ColdStorages /></AppLayout>} />
           <Route path="/sale-orders" element={<AppLayout><SaleOrders /></AppLayout>} />
           <Route path="/builty" element={<AppLayout><Builty /></AppLayout>} />
+          <Route path="/items" element={<AppLayout><ItemsMaster /></AppLayout>} />
+          <Route path="/parties" element={<AppLayout><PartiesMaster /></AppLayout>} />
           <Route path="/reports" element={<AppLayout><Reports /></AppLayout>} />
           <Route path="/settings" element={<AppLayout><Settings /></AppLayout>} />
           <Route path="*" element={<AppLayout><NotFound /></AppLayout>} />
