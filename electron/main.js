@@ -1,4 +1,4 @@
-import { app, BrowserWindow, ipcMain } from 'electron';
+import { app, autoUpdater, BrowserWindow, ipcMain } from 'electron';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { updateElectronApp } from 'update-electron-app';
@@ -16,6 +16,32 @@ import { initDatabase } from './database/migrations';
 import { closeDatabase } from './database/db';
 import * as handlers from './database/handlers';
 import { createBackup, createManualBackup, checkAndCreateBackupOnStartup, startPeriodicBackup, stopPeriodicBackup, createBackupOnClose, importDatabase, } from './database/backup';
+let updateState = {
+    status: app.isPackaged ? 'idle' : 'dev',
+    version: null,
+    error: null,
+};
+if (app.isPackaged) {
+    autoUpdater.on('checking-for-update', () => {
+        updateState = { ...updateState, status: 'checking', error: null };
+    });
+    autoUpdater.on('update-available', () => {
+        updateState = { ...updateState, status: 'available', error: null };
+    });
+    autoUpdater.on('update-not-available', () => {
+        updateState = { status: 'not-available', version: null, error: null };
+    });
+    autoUpdater.on('update-downloaded', (_e, _notes, releaseName) => {
+        updateState = { status: 'downloaded', version: releaseName ?? null, error: null };
+    });
+    autoUpdater.on('error', (err) => {
+        updateState = {
+            status: 'error',
+            version: null,
+            error: err?.message ?? String(err),
+        };
+    });
+}
 // Auto-update from GitHub Releases via update.electronjs.org (free service).
 // Only runs in packaged builds; a no-op in `npm run start` dev mode.
 // Requires the app to be installed via the Squirrel Setup.exe (not portable zip).
@@ -167,6 +193,72 @@ app.on('ready', () => {
     ipcMain.handle('db:addPartyMaster', (_, data) => handlers.addPartyMaster(data));
     ipcMain.handle('db:updatePartyMaster', (_, id, data) => handlers.updatePartyMaster(id, data));
     ipcMain.handle('db:deletePartyMaster', (_, id) => handlers.deletePartyMaster(id));
+    // App info + manual update check
+    ipcMain.handle('app:getVersion', () => app.getVersion());
+    ipcMain.handle('update:getState', () => updateState);
+    ipcMain.handle('update:check', () => {
+        return new Promise((resolve) => {
+            if (!app.isPackaged) {
+                resolve({ status: 'dev', version: null, error: null });
+                return;
+            }
+            // Already downloaded earlier in this session? Just reflect that.
+            if (updateState.status === 'downloaded') {
+                resolve(updateState);
+                return;
+            }
+            let settled = false;
+            const settle = (state) => {
+                if (settled)
+                    return;
+                settled = true;
+                cleanup();
+                clearTimeout(timeout);
+                resolve(state);
+            };
+            const onNotAvail = () => settle({ status: 'not-available', version: null, error: null });
+            const onDownloaded = (_e, _notes, releaseName) => settle({ status: 'downloaded', version: releaseName ?? null, error: null });
+            const onError = (err) => settle({
+                status: 'error',
+                version: null,
+                error: err?.message ?? String(err),
+            });
+            const cleanup = () => {
+                autoUpdater.removeListener('update-not-available', onNotAvail);
+                autoUpdater.removeListener('update-downloaded', onDownloaded);
+                autoUpdater.removeListener('error', onError);
+            };
+            autoUpdater.once('update-not-available', onNotAvail);
+            autoUpdater.once('update-downloaded', onDownloaded);
+            autoUpdater.once('error', onError);
+            // The Squirrel updater has no download-progress event, so we cap the
+            // manual-check wait at 2 min. If a download is still in flight it
+            // will finish in the background and `updateState` will reflect it.
+            const timeout = setTimeout(() => {
+                settle(updateState);
+            }, 120000);
+            try {
+                autoUpdater.checkForUpdates();
+            }
+            catch (err) {
+                settle({
+                    status: 'error',
+                    version: null,
+                    error: err instanceof Error ? err.message : String(err),
+                });
+            }
+        });
+    });
+    ipcMain.handle('update:restartAndInstall', () => {
+        if (!app.isPackaged) {
+            return { ok: false, message: 'Updates only install in a packaged build.' };
+        }
+        if (updateState.status !== 'downloaded') {
+            return { ok: false, message: 'No update is ready to install.' };
+        }
+        autoUpdater.quitAndInstall();
+        return { ok: true, message: 'Restarting…' };
+    });
     // Backup handlers
     ipcMain.handle('backup:create', () => {
         return createBackup();

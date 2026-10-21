@@ -54,4 +54,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
     addPartyMaster: (data) => ipcRenderer.invoke('db:addPartyMaster', data),
     updatePartyMaster: (id, data) => ipcRenderer.invoke('db:updatePartyMaster', id, data),
     deletePartyMaster: (id) => ipcRenderer.invoke('db:deletePartyMaster', id),
+    // App info + updates
+    getAppVersion: () => ipcRenderer.invoke('app:getVersion'),
+    getUpdateState: () => ipcRenderer.invoke('update:getState'),
+    checkForUpdates: () => ipcRenderer.invoke('update:check'),
+    restartAndInstall: () => ipcRenderer.invoke('update:restartAndInstall'),
 });

@@ -27,6 +27,16 @@ import type {
 
 type PrintOptions = { copies?: number; autoPrint?: boolean };
 
+type UpdateStatus =
+  | 'idle'
+  | 'checking'
+  | 'available'
+  | 'downloaded'
+  | 'not-available'
+  | 'error'
+  | 'dev';
+type UpdateState = { status: UpdateStatus; version: string | null; error: string | null };
+
 // Expose protected methods that allow the renderer process to use
 // the ipcRenderer without exposing the entire object
 contextBridge.exposeInMainWorld('electronAPI', {
@@ -130,6 +140,13 @@ contextBridge.exposeInMainWorld('electronAPI', {
   updatePartyMaster: (id: string, data: UpdatePartyMaster): Promise<PartyMaster> =>
     ipcRenderer.invoke('db:updatePartyMaster', id, data),
   deletePartyMaster: (id: string): Promise<void> => ipcRenderer.invoke('db:deletePartyMaster', id),
+
+  // App info + updates
+  getAppVersion: (): Promise<string> => ipcRenderer.invoke('app:getVersion'),
+  getUpdateState: (): Promise<UpdateState> => ipcRenderer.invoke('update:getState'),
+  checkForUpdates: (): Promise<UpdateState> => ipcRenderer.invoke('update:check'),
+  restartAndInstall: (): Promise<{ ok: boolean; message: string }> =>
+    ipcRenderer.invoke('update:restartAndInstall'),
 });
 
 // Type declaration for TypeScript
@@ -179,6 +196,10 @@ declare global {
       addPartyMaster: (data: NewPartyMaster) => Promise<PartyMaster>;
       updatePartyMaster: (id: string, data: UpdatePartyMaster) => Promise<PartyMaster>;
       deletePartyMaster: (id: string) => Promise<void>;
+      getAppVersion: () => Promise<string>;
+      getUpdateState: () => Promise<UpdateState>;
+      checkForUpdates: () => Promise<UpdateState>;
+      restartAndInstall: () => Promise<{ ok: boolean; message: string }>;
     };
   }
 }

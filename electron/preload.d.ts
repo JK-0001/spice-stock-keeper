@@ -3,6 +3,12 @@ type PrintOptions = {
     copies?: number;
     autoPrint?: boolean;
 };
+type UpdateStatus = 'idle' | 'checking' | 'available' | 'downloaded' | 'not-available' | 'error' | 'dev';
+type UpdateState = {
+    status: UpdateStatus;
+    version: string | null;
+    error: string | null;
+};
 declare global {
     interface Window {
         electronAPI: {
@@ -67,6 +73,13 @@ declare global {
             addPartyMaster: (data: NewPartyMaster) => Promise<PartyMaster>;
             updatePartyMaster: (id: string, data: UpdatePartyMaster) => Promise<PartyMaster>;
             deletePartyMaster: (id: string) => Promise<void>;
+            getAppVersion: () => Promise<string>;
+            getUpdateState: () => Promise<UpdateState>;
+            checkForUpdates: () => Promise<UpdateState>;
+            restartAndInstall: () => Promise<{
+                ok: boolean;
+                message: string;
+            }>;
         };
     }
 }
