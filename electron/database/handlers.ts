@@ -218,6 +218,9 @@ export function addInventory(data: NewInventory): InventoryWithStorage {
     updated_at
   );
 
+  ensureItemInMaster(data.item_name);
+  ensurePartyInMaster(data.party_name);
+
   return getInventoryItem(id)!;
 }
 
@@ -292,6 +295,9 @@ export function updateInventory(id: string, data: UpdateInventory): InventoryWit
   `);
 
   stmt.run(...values);
+
+  if (data.item_name !== undefined) ensureItemInMaster(data.item_name);
+  if (data.party_name !== undefined) ensurePartyInMaster(data.party_name);
 
   return getInventoryItem(id)!;
 }
@@ -647,6 +653,29 @@ function nz(v: string | null | undefined): string | null {
   return t === '' ? null : t;
 }
 
+// ─── Master auto-sync helpers ─────────────────────────────────────
+// Any name saved into inventory / sale orders / builty is also upserted into
+// the corresponding master table (INSERT OR IGNORE on UNIQUE COLLATE NOCASE).
+// Keeps the Items / Parties pages in sync with reality without the operator
+// having to add entries manually.
+function ensureItemInMaster(name: string | null | undefined): void {
+  const n = (name ?? '').trim();
+  if (!n) return;
+  const db = getDatabase();
+  db.prepare(
+    `INSERT OR IGNORE INTO items_master (id, name, created_at) VALUES (?, ?, ?)`
+  ).run(uuidv4(), n, new Date().toISOString());
+}
+
+function ensurePartyInMaster(name: string | null | undefined): void {
+  const n = (name ?? '').trim();
+  if (!n) return;
+  const db = getDatabase();
+  db.prepare(
+    `INSERT OR IGNORE INTO parties_master (id, name, created_at) VALUES (?, ?, ?)`
+  ).run(uuidv4(), n, new Date().toISOString());
+}
+
 // ─── FY serial helper ─────────────────────────────────────────────
 // Indian financial year: April 1 → March 31.
 // A date on/after Apr 1 of year Y belongs to FY Y-(Y+1); before Apr 1 belongs to (Y-1)-Y.
@@ -735,6 +764,10 @@ export function addSaleOrder(data: NewSaleOrder): SaleOrderWithItems {
   });
   tx();
 
+  // Keep masters in sync with whatever got entered.
+  ensurePartyInMaster(data.party_name);
+  for (const it of data.items) ensureItemInMaster(it.item_name);
+
   return getSaleOrder(id)!;
 }
 
@@ -787,6 +820,11 @@ export function updateSaleOrder(id: string, data: UpdateSaleOrder): SaleOrderWit
     }
   });
   tx();
+
+  if (data.party_name !== undefined) ensurePartyInMaster(data.party_name);
+  if (data.items !== undefined) {
+    for (const it of data.items) ensureItemInMaster(it.item_name);
+  }
 
   return getSaleOrder(id)!;
 }
@@ -843,6 +881,9 @@ export function addBuilty(data: NewBuilty): BuiltyWithItems {
   });
   tx();
 
+  ensurePartyInMaster(data.party_name);
+  for (const it of data.items) ensureItemInMaster(it.item_name);
+
   return getBuilty(id)!;
 }
 
@@ -884,6 +925,11 @@ export function updateBuilty(id: string, data: UpdateBuilty): BuiltyWithItems {
     }
   });
   tx();
+
+  if (data.party_name !== undefined) ensurePartyInMaster(data.party_name);
+  if (data.items !== undefined) {
+    for (const it of data.items) ensureItemInMaster(it.item_name);
+  }
 
   return getBuilty(id)!;
 }

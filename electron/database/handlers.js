@@ -148,6 +148,8 @@ export function addInventory(data) {
   `);
     stmt.run(id, data.item_name, data.party_name, data.purchase_date, data.cold_storage_date, data.brand || null, data.purchase_rate, data.cold_storage_id || null, data.lot_number || null, data.quantity_total, data.weight_total, data.cold_rate, data.quantity_total, // initial balance equals total
     'Active', null, null, created_at, updated_at);
+    ensureItemInMaster(data.item_name);
+    ensurePartyInMaster(data.party_name);
     return getInventoryItem(id);
 }
 export function updateInventory(id, data) {
@@ -216,6 +218,10 @@ export function updateInventory(id, data) {
     WHERE id = ?
   `);
     stmt.run(...values);
+    if (data.item_name !== undefined)
+        ensureItemInMaster(data.item_name);
+    if (data.party_name !== undefined)
+        ensurePartyInMaster(data.party_name);
     return getInventoryItem(id);
 }
 export function deleteInventory(id) {
@@ -506,6 +512,25 @@ function nz(v) {
     const t = String(v).trim();
     return t === '' ? null : t;
 }
+// ─── Master auto-sync helpers ─────────────────────────────────────
+// Any name saved into inventory / sale orders / builty is also upserted into
+// the corresponding master table (INSERT OR IGNORE on UNIQUE COLLATE NOCASE).
+// Keeps the Items / Parties pages in sync with reality without the operator
+// having to add entries manually.
+function ensureItemInMaster(name) {
+    const n = (name ?? '').trim();
+    if (!n)
+        return;
+    const db = getDatabase();
+    db.prepare(`INSERT OR IGNORE INTO items_master (id, name, created_at) VALUES (?, ?, ?)`).run(uuidv4(), n, new Date().toISOString());
+}
+function ensurePartyInMaster(name) {
+    const n = (name ?? '').trim();
+    if (!n)
+        return;
+    const db = getDatabase();
+    db.prepare(`INSERT OR IGNORE INTO parties_master (id, name, created_at) VALUES (?, ?, ?)`).run(uuidv4(), n, new Date().toISOString());
+}
 // ─── FY serial helper ─────────────────────────────────────────────
 // Indian financial year: April 1 → March 31.
 // A date on/after Apr 1 of year Y belongs to FY Y-(Y+1); before Apr 1 belongs to (Y-1)-Y.
@@ -569,6 +594,10 @@ export function addSaleOrder(data) {
         });
     });
     tx();
+    // Keep masters in sync with whatever got entered.
+    ensurePartyInMaster(data.party_name);
+    for (const it of data.items)
+        ensureItemInMaster(it.item_name);
     return getSaleOrder(id);
 }
 export function updateSaleOrder(id, data) {
@@ -605,6 +634,12 @@ export function updateSaleOrder(id, data) {
         }
     });
     tx();
+    if (data.party_name !== undefined)
+        ensurePartyInMaster(data.party_name);
+    if (data.items !== undefined) {
+        for (const it of data.items)
+            ensureItemInMaster(it.item_name);
+    }
     return getSaleOrder(id);
 }
 export function deleteSaleOrder(id) {
@@ -647,6 +682,9 @@ export function addBuilty(data) {
         });
     });
     tx();
+    ensurePartyInMaster(data.party_name);
+    for (const it of data.items)
+        ensureItemInMaster(it.item_name);
     return getBuilty(id);
 }
 export function updateBuilty(id, data) {
@@ -683,6 +721,12 @@ export function updateBuilty(id, data) {
         }
     });
     tx();
+    if (data.party_name !== undefined)
+        ensurePartyInMaster(data.party_name);
+    if (data.items !== undefined) {
+        for (const it of data.items)
+            ensureItemInMaster(it.item_name);
+    }
     return getBuilty(id);
 }
 export function deleteBuilty(id) {

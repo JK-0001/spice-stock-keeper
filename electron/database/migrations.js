@@ -585,5 +585,45 @@ export function initDatabase() {
     catch (error) {
         console.error('Error adding unit column to line-item tables:', error);
     }
+    // Backfill masters from existing inventory / sale orders / builtys so names
+    // typed into those tables before the masters existed are visible (and
+    // editable) on the Items / Parties pages. Idempotent thanks to
+    // INSERT OR IGNORE against UNIQUE COLLATE NOCASE, so this is safe to run
+    // on every startup — a no-op when there's nothing new.
+    try {
+        const { randomUUID } = require('crypto');
+        const now = new Date().toISOString();
+        const itemNames = db
+            .prepare(`SELECT DISTINCT trim(name) AS name FROM (
+           SELECT item_name AS name FROM inventory WHERE item_name IS NOT NULL AND trim(item_name) != ''
+           UNION SELECT item_name FROM sale_order_items WHERE item_name IS NOT NULL AND trim(item_name) != ''
+           UNION SELECT item_name FROM builty_items WHERE item_name IS NOT NULL AND trim(item_name) != ''
+         )`)
+            .all();
+        const insItem = db.prepare(`INSERT OR IGNORE INTO items_master (id, name, created_at) VALUES (?, ?, ?)`);
+        const txItems = db.transaction((rows) => {
+            for (const r of rows)
+                if (r.name)
+                    insItem.run(randomUUID(), r.name, now);
+        });
+        txItems(itemNames);
+        const partyNames = db
+            .prepare(`SELECT DISTINCT trim(name) AS name FROM (
+           SELECT party_name AS name FROM inventory WHERE party_name IS NOT NULL AND trim(party_name) != ''
+           UNION SELECT party_name FROM sale_orders WHERE party_name IS NOT NULL AND trim(party_name) != ''
+           UNION SELECT party_name FROM builty WHERE party_name IS NOT NULL AND trim(party_name) != ''
+         )`)
+            .all();
+        const insParty = db.prepare(`INSERT OR IGNORE INTO parties_master (id, name, created_at) VALUES (?, ?, ?)`);
+        const txParties = db.transaction((rows) => {
+            for (const r of rows)
+                if (r.name)
+                    insParty.run(randomUUID(), r.name, now);
+        });
+        txParties(partyNames);
+    }
+    catch (error) {
+        console.error('Error backfilling masters from existing records:', error);
+    }
     console.log('Database initialized successfully');
 }
