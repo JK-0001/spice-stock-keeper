@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/select';
 import { useAddInventory, useColdStorages } from '@/hooks/useInventory';
 import { useToast } from '@/hooks/use-toast';
+import { handleFormNavKeyDown } from '@/lib/gridNav';
 
 const formSchema = z.object({
   item_name: z.string().min(1, 'Item name is required').max(100),
@@ -118,7 +119,7 @@ export function AddInventoryDialog() {
           <DialogTitle>Add New Inventory</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} onKeyDown={handleFormNavKeyDown} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}

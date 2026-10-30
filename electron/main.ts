@@ -366,6 +366,13 @@ app.on('ready', () => {
           modal: !autoPrint,
           parent: autoPrint ? undefined : mainWindow ?? undefined,
           resizable: true,
+          webPreferences: {
+            // Chromium's built-in PDF viewer (PDFium) is gated behind this
+            // flag and is OFF by default. Without it a `data:application/pdf`
+            // URL never renders, so webContents.print() prints a blank page —
+            // which is why Sale Order / Builty printing produced nothing.
+            plugins: true,
+          },
         });
 
         printWindow.loadURL(dataUrl);

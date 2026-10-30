@@ -3,9 +3,13 @@ import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import type { BuiltyWithItems } from '@/lib/types';
 
-export function exportBuiltyToPDF(builty: BuiltyWithItems) {
-  const doc = new jsPDF('p', 'mm', 'a4');
+// Builtys are always printed 2 up (one for the office, one for the driver).
+// Copies are baked into the PDF as extra pages because the Windows print dialog
+// ignores the "copies" value Electron passes and always defaults to 1.
+const PRINT_COPIES = 2;
 
+// Draws one complete Builty onto the current page(s) of `doc`.
+function drawBuilty(doc: jsPDF, builty: BuiltyWithItems) {
   doc.setFontSize(18);
   doc.text('Builty / Dispatch Copy', 5, 20);
 
@@ -87,9 +91,18 @@ export function exportBuiltyToPDF(builty: BuiltyWithItems) {
     const lines = doc.splitTextToSize(builty.notes, 190);
     doc.text(lines, 5, cursorY + 5);
   }
+}
 
-  const dataUrl = doc.output('dataurl') as unknown as string;
-  // Builtys are always printed 2 up (one for the office, one for the driver).
-  // The main process opens the OS print dialog with copies pre-set to 2.
-  window.electronAPI.printPDF(dataUrl, { copies: 2, autoPrint: true });
+export function exportBuiltyToPDF(builty: BuiltyWithItems) {
+  const doc = new jsPDF('p', 'mm', 'a4');
+
+  for (let copy = 0; copy < PRINT_COPIES; copy++) {
+    if (copy > 0) doc.addPage();
+    drawBuilty(doc, builty);
+  }
+
+  // Clean `data:application/pdf;base64,…` URL so Chromium's PDF viewer renders it.
+  const dataUrl = 'data:application/pdf;base64,' + btoa(doc.output());
+  // Copies already baked into the PDF, so ask the print layer for 1.
+  window.electronAPI.printPDF(dataUrl, { copies: 1, autoPrint: true });
 }

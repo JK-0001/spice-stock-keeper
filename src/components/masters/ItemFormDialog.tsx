@@ -13,6 +13,7 @@ import { Button } from '@/components/ui/button';
 import { AutocompleteInput } from '@/components/ui/autocomplete-input';
 import { useAddItemMaster, useUpdateItemMaster } from '@/hooks/useMasters';
 import { useToast } from '@/hooks/use-toast';
+import { handleFormNavKeyDown } from '@/lib/gridNav';
 import type { ItemMaster } from '@/lib/types';
 
 // Common units in Indian spice trade. These feed the datalist suggestions
@@ -111,7 +112,7 @@ export function ItemFormDialog({ item, trigger, open: openProp, onOpenChange }: 
       <DialogHeader>
         <DialogTitle>{isEdit ? `Edit Item` : 'Add Item'}</DialogTitle>
       </DialogHeader>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} onKeyDown={handleFormNavKeyDown} className="space-y-4">
         <div>
           <Label>Item Name *</Label>
           <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. Red Chilli" />

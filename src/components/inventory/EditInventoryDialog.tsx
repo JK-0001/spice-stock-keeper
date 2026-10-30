@@ -29,6 +29,7 @@ import {
 } from '@/components/ui/select';
 import { useUpdateInventory, useColdStorages, useOutgoingForInventory } from '@/hooks/useInventory';
 import { useToast } from '@/hooks/use-toast';
+import { handleFormNavKeyDown } from '@/lib/gridNav';
 import type { InventoryWithStorage } from '@/lib/supabase-types';
 
 const formSchema = z.object({
@@ -150,7 +151,7 @@ export function EditInventoryDialog({ item }: EditInventoryDialogProps) {
           <DialogTitle>Edit Inventory</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} onKeyDown={handleFormNavKeyDown} className="space-y-4">
             <div className="grid grid-cols-2 gap-4">
               <FormField
                 control={form.control}

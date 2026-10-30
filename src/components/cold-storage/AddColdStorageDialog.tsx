@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useAddColdStorage } from '@/hooks/useInventory';
 import { useToast } from '@/hooks/use-toast';
+import { handleFormNavKeyDown } from '@/lib/gridNav';
 
 const formSchema = z.object({
   cold_storage_name: z.string().min(1, 'Name is required').max(100),
@@ -75,7 +76,7 @@ export function AddColdStorageDialog() {
           <DialogTitle>Add Cold Storage</DialogTitle>
         </DialogHeader>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} onKeyDown={handleFormNavKeyDown} className="space-y-4">
             <FormField
               control={form.control}
               name="cold_storage_name"

@@ -12,6 +12,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Button } from '@/components/ui/button';
 import { useAddPartyMaster, useUpdatePartyMaster } from '@/hooks/useMasters';
 import { useToast } from '@/hooks/use-toast';
+import { handleFormNavKeyDown } from '@/lib/gridNav';
 import type { PartyMaster } from '@/lib/types';
 
 interface Props {
@@ -101,7 +102,7 @@ export function PartyFormDialog({ party, trigger, open: openProp, onOpenChange }
       <DialogHeader>
         <DialogTitle>{isEdit ? `Edit Party` : 'Add Party'}</DialogTitle>
       </DialogHeader>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} onKeyDown={handleFormNavKeyDown} className="space-y-4">
         <div>
           <Label>Party Name *</Label>
           <Input value={name} onChange={(e) => setName(e.target.value)} placeholder="e.g. ABC Traders" />

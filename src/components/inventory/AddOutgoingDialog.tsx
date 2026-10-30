@@ -23,6 +23,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useAddOutgoing } from '@/hooks/useInventory';
 import { useToast } from '@/hooks/use-toast';
+import { handleFormNavKeyDown } from '@/lib/gridNav';
 
 interface AddOutgoingDialogProps {
   inventoryId: string;
@@ -124,7 +125,7 @@ export function AddOutgoingDialog({
           <span className="font-semibold">{currentBalance} units</span>
         </div>
         <Form {...form}>
-          <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+          <form onSubmit={form.handleSubmit(onSubmit)} onKeyDown={handleFormNavKeyDown} className="space-y-4">
             <FormField
               control={form.control}
               name="outgoing_date"

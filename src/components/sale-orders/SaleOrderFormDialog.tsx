@@ -17,6 +17,7 @@ import { usePartySuggestions, useItemNameSuggestions, useMarkaSuggestions } from
 import { useItemsMaster } from '@/hooks/useMasters';
 import { COMMON_UNITS } from '@/components/masters/ItemFormDialog';
 import { useToast } from '@/hooks/use-toast';
+import { handleGridNavKeyDown, handleFormNavKeyDown } from '@/lib/gridNav';
 import type { SaleOrderWithItems, NewSaleOrderItem } from '@/lib/types';
 
 interface Props {
@@ -200,7 +201,7 @@ export function SaleOrderFormDialog({ order, trigger, open: openProp, onOpenChan
       <DialogHeader>
         <DialogTitle>{isEdit ? `Edit Sale Order ${order?.serial_no}` : 'New Sale Order'}</DialogTitle>
       </DialogHeader>
-      <form onSubmit={handleSubmit} className="space-y-4">
+      <form onSubmit={handleSubmit} onKeyDown={handleFormNavKeyDown} className="space-y-4">
         <div className="grid grid-cols-2 gap-4">
           <div>
             <Label>Date *</Label>
@@ -230,7 +231,7 @@ export function SaleOrderFormDialog({ order, trigger, open: openProp, onOpenChan
                 <th className="w-10"></th>
               </tr>
             </thead>
-            <tbody>
+            <tbody onKeyDown={(e) => handleGridNavKeyDown(e, { rows: rows.length, cols: 6 })}>
               {rows.map((r, idx) => (
                 <tr key={idx} className="border-t border-border">
                   <td className="px-2 py-1">
@@ -239,6 +240,8 @@ export function SaleOrderFormDialog({ order, trigger, open: openProp, onOpenChan
                       onChange={(e) => updateRow(idx, { item_name: e.target.value })}
                       suggestions={itemSuggestions}
                       placeholder="Item"
+                      data-nav-row={idx}
+                      data-nav-col={0}
                     />
                   </td>
                   <td className="px-2 py-1">
@@ -247,6 +250,8 @@ export function SaleOrderFormDialog({ order, trigger, open: openProp, onOpenChan
                       onChange={(e) => updateRow(idx, { marka: e.target.value })}
                       suggestions={markaSuggestions}
                       placeholder="Brand"
+                      data-nav-row={idx}
+                      data-nav-col={1}
                     />
                   </td>
                   <td className="px-2 py-1">
@@ -257,6 +262,8 @@ export function SaleOrderFormDialog({ order, trigger, open: openProp, onOpenChan
                       className="text-right"
                       value={r.quantity}
                       onChange={(e) => updateRow(idx, { quantity: e.target.value })}
+                      data-nav-row={idx}
+                      data-nav-col={2}
                     />
                   </td>
                   <td className="px-2 py-1">
@@ -265,6 +272,8 @@ export function SaleOrderFormDialog({ order, trigger, open: openProp, onOpenChan
                       onChange={(e) => updateRow(idx, { unit: e.target.value })}
                       suggestions={COMMON_UNITS}
                       placeholder="kg"
+                      data-nav-row={idx}
+                      data-nav-col={3}
                     />
                   </td>
                   <td className="px-2 py-1">
@@ -275,6 +284,8 @@ export function SaleOrderFormDialog({ order, trigger, open: openProp, onOpenChan
                       className="text-right"
                       value={r.rate}
                       onChange={(e) => updateRow(idx, { rate: e.target.value })}
+                      data-nav-row={idx}
+                      data-nav-col={4}
                     />
                   </td>
                   <td className="px-2 py-1">
@@ -286,6 +297,8 @@ export function SaleOrderFormDialog({ order, trigger, open: openProp, onOpenChan
                       className="text-right"
                       value={r.discount_percent}
                       onChange={(e) => updateRow(idx, { discount_percent: e.target.value })}
+                      data-nav-row={idx}
+                      data-nav-col={5}
                     />
                   </td>
                   <td className="px-1 py-1">

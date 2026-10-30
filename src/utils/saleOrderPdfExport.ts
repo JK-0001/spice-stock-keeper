@@ -3,9 +3,15 @@ import autoTable from 'jspdf-autotable';
 import { format } from 'date-fns';
 import type { SaleOrderWithItems } from '@/lib/types';
 
-export function exportSaleOrderToPDF(order: SaleOrderWithItems) {
-  const doc = new jsPDF('p', 'mm', 'a4');
+// How many copies to produce per print. Sale Orders are always printed 2 up
+// (customer + file copy). We bake the copies into the PDF as extra pages rather
+// than relying on the print dialog's "copies" field — on Windows the native
+// dialog ignores the value Electron passes and always shows 1, which is why the
+// client saw a default of 1. Baking it in makes 2 the true default.
+const PRINT_COPIES = 2;
 
+// Draws one complete Sale Order onto the current page(s) of `doc`.
+function drawSaleOrder(doc: jsPDF, order: SaleOrderWithItems) {
   doc.setFontSize(18);
   doc.text('Sale Order', 5, 20);
 
@@ -79,9 +85,19 @@ export function exportSaleOrderToPDF(order: SaleOrderWithItems) {
     const lines = doc.splitTextToSize(order.notes, 190);
     doc.text(lines, 5, cursorY + 5);
   }
+}
 
-  const dataUrl = doc.output('dataurl') as unknown as string;
-  // Sale Orders are always printed 2 up (customer + file copy). The main
-  // process opens the OS print dialog with copies pre-set to 2.
-  window.electronAPI.printPDF(dataUrl, { copies: 2, autoPrint: true });
+export function exportSaleOrderToPDF(order: SaleOrderWithItems) {
+  const doc = new jsPDF('p', 'mm', 'a4');
+
+  for (let copy = 0; copy < PRINT_COPIES; copy++) {
+    if (copy > 0) doc.addPage();
+    drawSaleOrder(doc, order);
+  }
+
+  // Build a clean `data:application/pdf;base64,…` URL. A bare content type
+  // (no filename parameter) is what Chromium's PDF viewer needs to render it.
+  const dataUrl = 'data:application/pdf;base64,' + btoa(doc.output());
+  // Copies are already baked into the PDF, so ask the print layer for 1.
+  window.electronAPI.printPDF(dataUrl, { copies: 1, autoPrint: true });
 }
